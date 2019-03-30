@@ -1,13 +1,15 @@
 import math
 
 class BM25:
-    b = 0.75
-    k = 1.2
 
     # documents: is a dict of doc_ids containing terms with corresponding weights
-    def __init__(self, documents, query):
+    def __init__(self, documents, query, b=None, k=None):
         self.documents = documents
         self.query = query
+        if b is None:
+            self.b = 0.75
+        if k is None:
+            self.k = 1.2
 
     # documents average length
     def get_average_doc_length (self):
@@ -44,8 +46,8 @@ class BM25:
         terms = query.split()
 
         for term in terms:
-            counter = self.get_term_frequency_in_doc(term, doc_id) * (BM25.k + 1)
-            denominator = self.get_term_frequency_in_doc(term, doc_id) + (BM25.k * BM25.b * self.get_doc_length(doc_id)/self.get_average_doc_length()) + BM25.k * (1 - BM25.b)
+            counter = self.get_term_frequency_in_doc(term, doc_id) * (self.k + 1)
+            denominator = self.get_term_frequency_in_doc(term, doc_id) + (self.k * self.b * self.get_doc_length(doc_id)/self.get_average_doc_length()) + self.k * (1 - self.b)
             idf = self.idf_weight(term)
             score = score + (idf * counter/denominator)
         return score
