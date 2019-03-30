@@ -3,9 +3,10 @@ import math
 class BM25:
 
     # documents: is a dict of doc_ids containing terms with corresponding weights
-    def __init__(self, documents, query, b=None, k=None):
+    # default: k = 1.2
+    # default: b = 0.75
+    def __init__(self, documents, b=None, k=None):
         self.documents = documents
-        self.query = query
         if b is None:
             self.b = 0.75
         if k is None:
@@ -19,18 +20,18 @@ class BM25:
             num_items = num_items + len(v)
         return num_items/num_docs
 
-    # document exact length
+    # document exact length of specified doc_id
     def get_doc_length (self, doc_id):
         return len(self.documents[doc_id])
 
-    # get frequency of term in document
+    # get frequency of term in document with doc_id
     def get_term_frequency_in_doc (self, term, doc_id):
         try:
             return self.documents[doc_id][term]
         except KeyError:
             return 0
 
-    # get weight of term
+    # get weight of term as idf weight
     def idf_weight(self, term):
         df = 0
         num_docs = len(self.documents.keys())
