@@ -14,7 +14,7 @@ class TFIDF:
         self.idf_vector = {}
         self.term_doc_matrix = self.create_tf_idf_matrix()
 
-    # create from documents a term-doc matrix with occurrences of terms in corresponding doc
+    # create from documents a term-doc matrix with number of occurrences of terms in corresponding doc
     def create_count_matrix(self):
         matrix = {}
         doc_id = 0
@@ -78,6 +78,7 @@ class TFIDF:
         # create the idf vector and the tf matrices
         self.idf_vector = TFIDF.create_idf_matrix(matrix)
         tf_matrix = TFIDF.create_tf_matrix(matrix)
+        # based on the tf_matrix and idf_vector, we calculate the tf_idf_matrix
         tf_idf_matrix = {}
         for k, v in tf_matrix.items():
             for word in v:
@@ -87,6 +88,8 @@ class TFIDF:
 
     # creates a query vector
     # query: list of query strings
+    # outputs a dict of terms and tf idf scores
+    # the idf is based on the idf scores of corresponding idf value in the corpus (in idf_vector)
     def create_query_vector(self, query):
         tokens = query.split()
         tokens_set = set(tokens)

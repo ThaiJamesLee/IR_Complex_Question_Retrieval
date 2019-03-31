@@ -4,14 +4,11 @@ import math
 
 class Similarity:
 
-    # calculate the cosie similarity score between two vectors v1, v2
+    # calculate the cosine similarity score between two vectors vec1, vec2
     # We assume the vectors are dicts of key, value pairs
-    # Like this: v1 = {k1:val1, k2:val2, k3:val3}
+    # Like this: vec1 = {k1:val1, k2:val2, k3:val3}
     @staticmethod
     def cosine_similarity(vec1, vec2):
-        print('Compare:')
-        print(vec1)
-        print(vec2)
         counter = 0
         denominator_1 = 0
         denominator_2 = 0

@@ -33,15 +33,21 @@ queries = ['asm', 'asm asm code standard', 'asm asm code standard asm boiler pre
 tf_idf = TFIDF(corpus)
 
 tf_idf_matrix = tf_idf.term_doc_matrix
+print('TF IDF Matrix')
+print(tf_idf_matrix)
 
 query_vector = tf_idf.create_query_vector(queries[40])
+print('Example Query Vector with Q='+queries[40])
+print(query_vector)
 
 ##################
 # Cosine Similarity
 ##################
 from similarity import Similarity
 
+print('================== Cosine Similarity Test ===================')
+print('Compare with Query='+queries[40])
 for docs, terms in tf_idf_matrix.items():
-    print('Similarity Doc:'+ docs + ' Query:'+queries[40])
-    print(Similarity.cosine_similarity(terms, query_vector))
+    print('Similarity to Doc='+ docs)
+    print('Score='+str(Similarity.cosine_similarity(terms, query_vector)))
 
