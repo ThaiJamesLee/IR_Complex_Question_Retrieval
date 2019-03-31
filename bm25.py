@@ -1,8 +1,11 @@
 import math
+__author__ = 'Duc Tai Ly'
+
 
 class BM25:
 
     # documents: is a dict of doc_ids containing terms with corresponding weights
+    # e.g. {'id_1': {'term1': value1, 'term2': value2, ... }, 'id_2': {'term12': value12, 'term2': value22, ... }, ...}
     # default: k = 1.2
     # default: b = 0.75
     def __init__(self, documents, b=None, k=None):
@@ -13,7 +16,7 @@ class BM25:
             self.k = 1.2
 
     # documents average length
-    def get_average_doc_length (self):
+    def get_average_doc_length(self):
         num_docs = len(self.documents.keys())
         num_items = 0
         for k, v in self.documents.items():
@@ -25,7 +28,7 @@ class BM25:
         return len(self.documents[doc_id])
 
     # get frequency of term in document with doc_id
-    def get_term_frequency_in_doc (self, term, doc_id):
+    def get_term_frequency_in_doc(self, term, doc_id):
         try:
             return self.documents[doc_id][term]
         except KeyError:
@@ -38,7 +41,7 @@ class BM25:
         for k, v in self.documents.items():
             if term in v:
                 df = df + 1
-        return math.log(num_docs/df)
+        return math.log(num_docs/df, 10)
 
     # calculate relevance score of query and corresponding document
     # terms in query should only be separated by blank spaces
