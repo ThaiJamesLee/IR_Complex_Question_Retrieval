@@ -1,6 +1,6 @@
+# -*- coding: utf-8 -*-
 # this is used to test implementations
 # and to show how to use the implemented code
-import numpy as py
 
 ##################
 # BM25
