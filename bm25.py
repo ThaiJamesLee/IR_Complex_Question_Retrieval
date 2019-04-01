@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import math
 __author__ = 'Duc Tai Ly'
 

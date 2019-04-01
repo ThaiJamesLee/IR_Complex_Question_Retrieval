@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 __author__ = 'Duc Tai Ly'
 import math
 
@@ -24,6 +25,6 @@ class Similarity:
         denominator_1 = math.sqrt(denominator_1)
         denominator_2 = math.sqrt(denominator_2)
         score = 0
-        if denominator_1 != 0 or denominator_2 != 0:
+        if denominator_1 != 0 and denominator_2 != 0:
             score = counter/(denominator_1*denominator_2)
         return score

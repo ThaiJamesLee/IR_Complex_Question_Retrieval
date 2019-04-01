@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 __author__ = 'Duc Tai Ly'
 import math
 import numpy as np
