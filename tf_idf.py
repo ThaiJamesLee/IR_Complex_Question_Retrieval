@@ -11,6 +11,9 @@ class TFIDF:
     # documents: list of paragraphs
     # term_doc_matrix: contains tf_idf values for each term/doc entry
     def __init__(self, documents):
+        if documents is None:
+            raise Exception('TFIDF should be initialized with a list of paragraphs as documents.')
+        self.vocabulary = Utils.create_vocabulary(documents)
         self.documents = np.unique(documents)
         self.idf_vector = {}
         self.term_doc_matrix = self.create_tf_idf_matrix()
@@ -44,15 +47,14 @@ class TFIDF:
 
     # matrix: contains matrix of docs with terms and term frequency (corpus)
     # create idf vector
-    @staticmethod
-    def create_idf_matrix(matrix):
+    def create_idf_matrix(self, matrix):
         idf_matrix = {}
         num_docs = len(matrix.items())
-        for doc, terms in matrix.items():
-            for term in terms:
-                if term not in idf_matrix:
+        for term in self.vocabulary:
+            for doc, terms in matrix.items():
+                if term not in idf_matrix and term in terms:
                     idf_matrix.update({term: 1})
-                else:
+                elif term in terms:
                     count = idf_matrix[term]
                     idf_matrix.update({term: count+1})
         for word in idf_matrix:
@@ -77,7 +79,7 @@ class TFIDF:
     def create_tf_idf_matrix(self):
         matrix = self.create_count_matrix()
         # create the idf vector and the tf matrices
-        self.idf_vector = TFIDF.create_idf_matrix(matrix)
+        self.idf_vector = self.create_idf_matrix(matrix)
         tf_matrix = TFIDF.create_tf_matrix(matrix)
         # based on the tf_matrix and idf_vector, we calculate the tf_idf_matrix
         tf_idf_matrix = {}

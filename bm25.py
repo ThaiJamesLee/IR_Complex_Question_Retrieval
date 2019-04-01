@@ -25,7 +25,7 @@ class BM25:
         return num_items/num_docs
 
     # document exact length of specified doc_id
-    def get_doc_length (self, doc_id):
+    def get_doc_length(self, doc_id):
         return len(self.documents[doc_id])
 
     # get frequency of term in document with doc_id
@@ -40,9 +40,12 @@ class BM25:
         df = 0
         num_docs = len(self.documents.keys())
         for k, v in self.documents.items():
-            if term in v:
+            if self.get_term_frequency_in_doc(term, k) > 0:
                 df = df + 1
-        return math.log(num_docs/df, 10)
+        if df != 0:
+            return math.log(num_docs/df, 10)
+        else:
+            return 0
 
     # calculate relevance score of query and corresponding document
     # terms in query should only be separated by blank spaces
@@ -50,9 +53,24 @@ class BM25:
         score = 0
         terms = query.split()
 
+        doc_length = self.get_doc_length(doc_id)
+        avg_doc_length = self.get_average_doc_length()
+
         for term in terms:
-            counter = self.get_term_frequency_in_doc(term, doc_id) * (self.k + 1)
-            denominator = self.get_term_frequency_in_doc(term, doc_id) + (self.k * self.b * self.get_doc_length(doc_id)/self.get_average_doc_length()) + self.k * (1 - self.b)
+            term_freq = self.get_term_frequency_in_doc(term, doc_id)
+            counter = term_freq * (self.k + 1)
+            denominator = term_freq + self.k * (1 - self.b + self.b * doc_length/avg_doc_length)
             idf = self.idf_weight(term)
-            score = score + (idf * counter/denominator)
+            # relevance score of term in current document
+            term_score = idf * counter/denominator
+            score = score + term_score
         return score
+
+    # query: input as string separated by whitespaces
+    #
+    def compute_relevance_on_corpus(self, query):
+        scores = {}
+        for doc_id, terms in self.documents.items():
+            score = self.relevance(doc_id, query)
+            scores.update({doc_id: score})
+        return scores
