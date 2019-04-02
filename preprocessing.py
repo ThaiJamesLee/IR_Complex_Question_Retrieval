@@ -37,7 +37,8 @@ class Preprocess:
         # set preprocess parameters
         self.stemmer = PorterStemmer()
         self.regex = re.compile(f'[{re.escape(string.punctuation)}]')
-        self.stopword = np.array(set(stopwords.words("english")))
+        self.stopword = set(stopwords.words("english"))
+        self.stopword.update('and')
         self.new_punctuation = np.array(string.punctuation)
 
     def preprocess(self, docs):
@@ -47,11 +48,11 @@ class Preprocess:
             if type(doc) == trec_car.read_data.Paragraph:
                 doc = doc.get_text()
             processed_doc.append(" ".join(
-                 [
+                [
                     self.stemmer.stem(i)
-                    for i in self.regex.sub(" ", doc).split()
-                    if (i != " ") & (i not in self.stopword) & (not i.isdigit()) & (i not in self.new_punctuation)
-                 ]
+                    for i in self.regex.sub(' ', doc).split()
+                    if(i != " ") & (i not in self.stopword) & (not i.isdigit()) & (i not in self.new_punctuation)
+                ]
             ))
         print(f'finish preprocess...')
         return processed_doc
@@ -69,13 +70,15 @@ class Preprocess:
 
     def load_query(self, *args):
         self.y_true = TrecQrel(args[0]).qrels_data
-        for idx in range(len(args)-1):
-            self.y_true.append(TrecQrel(args[idx+1]).qrels_data)
+        for idx in range(1, len(args)):
+            self.y_true = self.y_true.append(TrecQrel(args[idx]).qrels_data)
+        pickle.dump(self.y_true, open("processed_data/y_true.pkl", "wb"))
         self.raw_query = list(self.y_true['query'])
-        pickle.dump(self.raw_query, open('processed_data/raw_query.pkl', "wb"))
+        self.raw_query = np.unique(self.raw_query)
+        pickle.dump(self.raw_query, open("processed_data/raw_query.pkl", "wb"))
         for idx, query in enumerate(self.raw_query):
-            self.raw_query[idx] = query[7:].replace("/", " ").replace("%20", " ")  # first 7 digits 'enwiki:' for every query is the same
-        self.processed_query = self.preprocess(self.raw_query)
+            self.processed_query.append(query[7:].replace("/", " ").replace("%20", " ")) # first 7 digits 'enwiki:' for every query is the same
+        self.processed_query = self.preprocess(self.processed_query)
         pickle.dump(self.processed_query, open("processed_data/processed_query.pkl", "wb"))
         print('finish loading query')
 
@@ -147,11 +150,11 @@ class Preprocess:
         train set : all true paragraphs, 5 from other section, 5 from other article
         test set : all true paragraphs, and same amount paragraphs from other article
         """
-        train = pd.DataFrame(columns=self.y_true.columns)
-        test = pd.DataFrame(columns=self.y_true.columns)
-        print(f"number of queries {len(self.y_true['query'])}")
-        for idx, query in enumerate(self.y_true['query']):
-            print(f"no {idx} query {query} of {len(self.y_true['query'])}")
+        print(f"number of queries {len(self.raw_query)}")
+        train = self.y_true[self.y_true['query'] == self.raw_query[0]]
+        test = self.y_true[self.y_true['query'] == self.raw_query[0]]
+        for idx, query in enumerate(self.raw_query):
+            print(f"no {idx+1} / {len(self.raw_query)}")
             # add true
             train = train.append(self.y_true[self.y_true['query'] == query])
             test = test.append(self.y_true[self.y_true['query'] == query])
@@ -219,9 +222,9 @@ class Preprocess:
 def main():
     instance = Preprocess()
     instance.load_paragraph('test200/test200-train/train.pages.cbor-paragraphs.cbor')
-    instance.load_query("test200/test200-train/train.pages.cbor-article.qrels", \
+    instance.load_query("test200/test200-train/train.pages.cbor-toplevel.qrels", \
                         "test200/test200-train/train.pages.cbor-hierarchical.qrels", \
-                        "test200/test200-train/train.pages.cbor-toplevel.qrels")
+                        "test200/test200-train/train.pages.cbor-article.qrels")
     instance.load_page("test200/test200-train//train.pages.cbor")
     instance.paragraph_article_section_relation()
     instance.create_train_test()
