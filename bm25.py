@@ -67,10 +67,24 @@ class BM25:
         return score
 
     # query: input as string separated by whitespaces
-    #
+    # computes relevance score for each document
     def compute_relevance_on_corpus(self, query):
         scores = {}
         for doc_id, terms in self.documents.items():
             score = self.relevance(doc_id, query)
             scores.update({doc_id: score})
         return scores
+
+    # filter relevance scores
+    # specify a threshold if necessary, threshold is None by default
+    # top_k has default value of 100, set top_k=0 if you only filter by threshold
+    @staticmethod
+    def filter_relevance(threshold=None, top_k=100):
+        if top_k == 0 and threshold is None:
+            raise Exception('No valid filter specified')
+        elif threshold is None and top_k > 0:
+            pass
+        elif threshold is not None and top_k == 0:
+            pass
+        elif threshold is not None and top_k > 0:
+            pass
