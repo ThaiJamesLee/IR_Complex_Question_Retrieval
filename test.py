@@ -32,7 +32,11 @@ print(bm25.relevance('f8b6fc8f2c326f1f25a65216a58b426910e523c6', 'they'))
 relevance_scores = bm25.compute_relevance_on_corpus('dimension hidden imag display')
 print('Relevance Score Test')
 print(relevance_scores)
-print(str(len(relevance_scores.keys())))
+
+# sort dict by value
+# https://stackoverflow.com/questions/613183/how-do-i-sort-a-dictionary-by-value?page=1&tab=votes#tab-top
+for w in sorted(relevance_scores, key=relevance_scores.get, reverse=True):
+  print(w, relevance_scores[w])
 
 print('Test Utils create vocabulary')
 vocabulary = Utils.create_vocabulary_from_dict(documents)
@@ -47,7 +51,6 @@ print('================== TF_IDF Test ===================')
 tf_idf = TFIDF(corpus)
 
 tf_idf_matrix = tf_idf.term_doc_matrix
-print(tf_idf.create_count_matrix())
 print('TF IDF Matrix')
 print(tf_idf_matrix)
 

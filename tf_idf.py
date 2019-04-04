@@ -18,21 +18,6 @@ class TFIDF:
         self.idf_vector = {}
         self.term_doc_matrix = self.create_tf_idf_matrix()
 
-    # create from documents a term-doc matrix with number of occurrences of terms in corresponding doc
-    def create_count_matrix(self):
-        matrix = {}
-        doc_id = 0
-        for doc in self.documents:
-            words = doc.split()
-            words_set = set(words)
-            word_dict = dict.fromkeys(words_set, 0)
-            for word in words:
-                word_dict[word] += 1
-            doc = {str(doc_id): word_dict}
-            matrix.update(doc)
-            doc_id += 1
-        return matrix
-
     # matrix: contains matrix of docs with terms and term frequency (corpus)
     # term frequency of term in corresponding doc
     # returns the max frequency of a term in whole doc corpus
@@ -77,7 +62,7 @@ class TFIDF:
 
     # create the tf-idf matrix
     def create_tf_idf_matrix(self):
-        matrix = self.create_count_matrix()
+        matrix = Utils.create_count_matrix(self.documents)
         # create the idf vector and the tf matrices
         self.idf_vector = self.create_idf_matrix(matrix)
         tf_matrix = TFIDF.create_tf_matrix(matrix)

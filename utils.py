@@ -40,3 +40,19 @@ class Utils:
             words_set = set(terms)
             vocabulary = vocabulary.union(words_set)
         return vocabulary
+
+    # create from documents a term-doc matrix with number of occurrences of terms in corresponding doc
+    @staticmethod
+    def create_count_matrix(documents):
+        matrix = {}
+        doc_id = 0
+        for doc in documents:
+            words = doc.split()
+            words_set = set(words)
+            word_dict = dict.fromkeys(words_set, 0)
+            for word in words:
+                word_dict[word] += 1
+            doc = {str(doc_id): word_dict}
+            matrix.update(doc)
+            doc_id += 1
+        return matrix
