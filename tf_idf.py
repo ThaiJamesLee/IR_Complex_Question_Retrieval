@@ -5,24 +5,31 @@ import numpy as np
 from utils import Utils
 
 
-# Implementation based on dense vectors
 class TFIDF:
+    """
+    Class that calculates the tf-idf matrix with given term-doc matrix.
+    Implementation based on dense vectors.
+    """
 
-    # documents: list of paragraphs
-    # term_doc_matrix: contains tf_idf values for each term/doc entry
     def __init__(self, documents):
+        """
+
+        :param documents: Should be a document-word count dict
+        """
         if documents is None:
-            raise Exception('TFIDF should be initialized with a list of paragraphs as documents.')
-        self.vocabulary = Utils.create_vocabulary(documents)
-        self.documents = np.unique(documents)
+            raise Exception('TFIDF should be initialized with a corpus.')
+        self.documents = documents
         self.idf_vector = {}
         self.term_doc_matrix = self.create_tf_idf_matrix()
 
-    # matrix: contains matrix of docs with terms and term frequency (corpus)
-    # term frequency of term in corresponding doc
-    # returns the max frequency of a term in whole doc corpus
     @staticmethod
     def get_max_freq_term(matrix, doc_id):
+        """
+
+        :param matrix: The term-doc matrix
+        :param doc_id: The document od.
+        :return: Returns the highest max. occurrence of all words in a document of given doc id.
+        """
         max_freq = 0
         for k, v in matrix[doc_id].items():
             if v > max_freq:
@@ -31,10 +38,21 @@ class TFIDF:
 
     # matrix: contains matrix of docs with terms and term frequency (corpus)
     # create idf vector
-    def create_idf_matrix(self, matrix):
+    @staticmethod
+    def create_idf_matrix(matrix):
+        """
+
+        :param matrix: The term-doc matrix
+        :return: Returns the idf-vector as dict {term: idf-weight}
+        """
         idf_matrix = {}
         num_docs = len(matrix.items())
-        for term in self.vocabulary:
+        vocabulary = set()
+        for doc, terms in matrix.items():
+            words_set = set(terms.keys())
+            vocabulary = vocabulary.union(words_set)
+
+        for term in vocabulary:
             for doc, terms in matrix.items():
                 if term not in idf_matrix and term in terms:
                     idf_matrix.update({term: 1})
@@ -45,10 +63,15 @@ class TFIDF:
             idf_matrix[word] = math.log(num_docs/idf_matrix[word], 10)
         return idf_matrix
 
-    # Implementation like in slides Lecture 4 p.14
-    # tf(t,d) = (1 + log10(ft,d)) / (1 + log10 (max{ft’,d : t’ ∈ d}))
     @staticmethod
     def create_tf_matrix(matrix):
+        """
+
+        Implementation like in slides Lecture 4 p.14
+        tf(t,d) = (1 + log10(ft,d)) / (1 + log10 (max{ft’,d : t’ ∈ d}))
+        :param matrix:
+        :return:
+        """
         tf_matrix = {}
         for k, v in matrix.items():
             max_freq = TFIDF.get_max_freq_term(matrix, k)
@@ -59,9 +82,12 @@ class TFIDF:
                 Utils.add_ele_to_matrix(tf_matrix, k, word, value)
         return tf_matrix
 
-    # create the tf-idf matrix
     def create_tf_idf_matrix(self):
-        matrix = Utils.create_count_matrix(self.documents)
+        """
+        Creates a tf-idf matrix.
+        :return: It is a dict containing {docid: {term_1: tfidf-value, term_2: tfidf-value, ...}, ...}
+        """
+        matrix = self.documents
         # create the idf vector and the tf matrices
         self.idf_vector = self.create_idf_matrix(matrix)
         tf_matrix = TFIDF.create_tf_matrix(matrix)
@@ -73,11 +99,12 @@ class TFIDF:
                 Utils.add_ele_to_matrix(tf_idf_matrix, k, word, value)
         return tf_idf_matrix
 
-    # creates a query vector
-    # query: list of query strings
-    # outputs a dict of terms and tf idf scores
-    # the idf is based on the idf scores of corresponding idf value in the corpus (in idf_vector)
     def create_query_vector(self, query):
+        """
+        creates a query vector with tf-idf values based on given document corpus.
+        :param query: list of query strings.
+        :return: tf-idf vector as dict.
+        """
         tokens = query.split()
         tokens_set = set(tokens)
         word_dict = dict.fromkeys(tokens_set, 0)

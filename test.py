@@ -4,38 +4,49 @@
 import pickle
 import numpy as np
 
+
 from bm25 import BM25
 from tf_idf import TFIDF
 from similarity import Similarity
 
 
 from utils import Utils
-##################
-# BM25
-##################
-# is a dataframe
-queries = pickle.load(open('processed_data/processed_query.pkl', 'rb'))
-# load paragraph corpus
-corpus = pickle.load(open('processed_data/processed_paragraph.pkl', 'rb'))
 
+##################
+# Load test and processed data
+##################
+print('================== Load Data ===================')
+# contains list of query strings. querty terms are separated by whitespace
+queries = pickle.load(open('processed_data/processed_query.pkl', 'rb'))
+# load paragraph corpus that contains list of strings separated by whitespace.
+corpus = pickle.load(open('processed_data/processed_paragraph.pkl', 'rb'))
 test = pickle.load(open('processed_data/simulated_test.pkl', 'rb'))
 paragraph_ids = pickle.load(open('processed_data/paragraph_ids.pkl', 'rb'))
 unique_query = np.unique(list(test['query']))
+# y_true = pickle.load(open('processed_data/y_true.pkl', 'rb'))
+# print(y_true.columns)
 unique_doc = np.unique(list(test['docid']))
 
 c_corpus = [(id, corpus[paragraph_ids.index(id)].split()) for id in unique_doc]
 doc_structure = dict()
 # retrieve query at row 0, col 0
-print(test.iloc[0, 0])
+raw_query = pickle.load(open('processed_data/raw_query.pkl', 'rb'))
+# for idx, query in enumerate(raw_query):
+#    print(query[7:].replace("/", " ").replace("%20", " "))
+
+print(test.iloc[0, 0][7:].replace("/", " ").replace("%20", " "))
 print(Utils.get_doc_and_relevance_by_query(test.iloc[0, 0], test))
 for (id, doc) in c_corpus:
     value = {word: doc.count(word) for word in doc}
     doc_structure.update({id: value})
-print(doc_structure)
+# print(doc_structure)
+
+##################
+# BM25
+##################
+
 
 print('================== BM25 Test ===================')
-
-
 
 bm25 = BM25(doc_structure, k=1.2)
 
@@ -54,21 +65,21 @@ print(relevance_scores)
 for w in sorted(relevance_scores, key=relevance_scores.get, reverse=True):
   print(w, relevance_scores[w])
 
-print('Test Utils create vocabulary')
-vocabulary = Utils.create_vocabulary_from_dict(doc_structure)
-print(vocabulary)
-print(len(vocabulary))
+# print('Test Utils create vocabulary')
+# vocabulary = Utils.create_vocabulary_from_dict(doc_structure)
+# print(vocabulary)
+# print(len(vocabulary))
 
 ##################
 #
 ##################
 print('================== TF_IDF Test ===================')
 
-tf_idf = TFIDF(corpus)
+tf_idf = TFIDF(doc_structure)
 
 tf_idf_matrix = tf_idf.term_doc_matrix
 print('TF IDF Matrix')
-print(tf_idf_matrix)
+# print(tf_idf_matrix)
 
 query_vector = tf_idf.create_query_vector(queries[40])
 print('Example Query Vector with Q='+queries[40])
