@@ -56,3 +56,8 @@ class Utils:
             matrix.update(doc)
             doc_id += 1
         return matrix
+
+    @staticmethod
+    def get_doc_and_relevance_by_query(query, df):
+        y_true = df[df['query'] == query][['docid', 'rel']]
+        return y_true

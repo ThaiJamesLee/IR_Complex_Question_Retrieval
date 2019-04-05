@@ -7,14 +7,19 @@ class BM25:
 
     # documents: is a dict of doc_ids containing terms with corresponding weights
     # e.g. {'id_1': {'term1': value1, 'term2': value2, ... }, 'id_2': {'term12': value12, 'term2': value22, ... }, ...}
-    # default: k = 1.2
-    # default: b = 0.75
+    # default: k = 1.2, k is best in [1.2, 2.0]
+    # default: b = 0.75, b is best in [0.5, 0.8]
+    # see: https://www.researchgate.net/publication/220613776_The_Probabilistic_Relevance_Framework_BM25_and_Beyond
     def __init__(self, documents, b=None, k=None):
         self.documents = documents
         if b is None:
             self.b = 0.75
+        else:
+            self.b = b
         if k is None:
             self.k = 1.2
+        else:
+            self.k = k
 
     # documents average length
     def get_average_doc_length(self):
@@ -26,7 +31,10 @@ class BM25:
 
     # document exact length of specified doc_id
     def get_doc_length(self, doc_id):
-        return len(self.documents[doc_id])
+        doc_len = 0
+        for term, value in self.documents[doc_id].items():
+            doc_len += value
+        return doc_len
 
     # get frequency of term in document with doc_id
     def get_term_frequency_in_doc(self, term, doc_id):
@@ -86,17 +94,3 @@ class BM25:
             score = self.relevance(doc_id, query)
             scores.update({doc_id: score})
         return scores
-
-    # filter relevance scores
-    # specify a threshold if necessary, threshold is None by default
-    # top_k has default value of 100, set top_k=0 if you only filter by threshold
-    @staticmethod
-    def filter_relevance(threshold=None, top_k=100):
-        if top_k == 0 and threshold is None:
-            raise Exception('No valid filter specified')
-        elif threshold is None and top_k > 0:
-            pass
-        elif threshold is not None and top_k == 0:
-            pass
-        elif threshold is not None and top_k > 0:
-            pass
