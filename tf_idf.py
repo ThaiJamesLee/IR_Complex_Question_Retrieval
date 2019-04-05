@@ -22,12 +22,11 @@ class TFIDF:
     # term frequency of term in corresponding doc
     # returns the max frequency of a term in whole doc corpus
     @staticmethod
-    def get_max_freq_term(matrix):
+    def get_max_freq_term(matrix, doc_id):
         max_freq = 0
-        for k, v in matrix.items():
-            for word in v:
-                if v[word] > max_freq:
-                    max_freq = v[word]
+        for k, v in matrix[doc_id].items():
+            if v > max_freq:
+                max_freq = v
         return max_freq
 
     # matrix: contains matrix of docs with terms and term frequency (corpus)
@@ -51,8 +50,8 @@ class TFIDF:
     @staticmethod
     def create_tf_matrix(matrix):
         tf_matrix = {}
-        max_freq = TFIDF.get_max_freq_term(matrix)
         for k, v in matrix.items():
+            max_freq = TFIDF.get_max_freq_term(matrix, k)
             for word in v:
                 counter = 1+math.log(v[word], 10)
                 denominator = 1+math.log(max_freq, 10)
