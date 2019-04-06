@@ -4,7 +4,6 @@
 import pickle
 import numpy as np
 
-
 from bm25 import BM25
 from tf_idf import TFIDF
 from similarity import Similarity
@@ -31,10 +30,12 @@ c_corpus = [(id, corpus[paragraph_ids.index(id)].split()) for id in unique_doc]
 doc_structure = dict()
 # retrieve query at row 0, col 0
 raw_query = pickle.load(open('processed_data/raw_query.pkl', 'rb'))
-# for idx, query in enumerate(raw_query):
-#    print(query[7:].replace("/", " ").replace("%20", " "))
-
-print(test.iloc[0, 0][7:].replace("/", " ").replace("%20", " "))
+query_map = {}
+for idx, query in enumerate(raw_query):
+    query_map.update({query: query[7:].replace("/", " ").replace("%20", " ")})
+# print(query_map)
+# print(test.iloc[0, 0][7:].replace("/", " ").replace("%20", " "))
+# test is a dataframe
 print(Utils.get_doc_and_relevance_by_query(test.iloc[0, 0], test))
 for (id, doc) in c_corpus:
     value = {word: doc.count(word) for word in doc}
@@ -56,14 +57,25 @@ print(bm25.idf_weight('they'))
 
 print(bm25.relevance('f8b6fc8f2c326f1f25a65216a58b426910e523c6', 'they'))
 
-relevance_scores = bm25.compute_relevance_on_corpus('dimension hidden imag display')
-print('Relevance Score Test')
-print(relevance_scores)
+rel_scores = {}
+idx = 0
+for k, v in query_map.items():
+    # print(v)
+    # print('Compute Scores for ' + k + ':' + v)
+    rel_scores.update({k: bm25.compute_relevance_on_corpus(v)})
+    # rel_scores.update({k: bm25.compute_relevance_on_corpus(v)})
+    # idx += 1
+    # async_result.get()
+
+print(rel_scores)
+# relevance_scores = bm25.compute_relevance_on_corpus('dimension hidden imag display')
+# print('Relevance Score Test')
+# print(relevance_scores)
 
 # sort dict by value
 # https://stackoverflow.com/questions/613183/how-do-i-sort-a-dictionary-by-value?page=1&tab=votes#tab-top
-for w in sorted(relevance_scores, key=relevance_scores.get, reverse=True):
-  print(w, relevance_scores[w])
+# for w in sorted(relevance_scores, key=relevance_scores.get, reverse=True):
+#   print(w, relevance_scores[w])
 
 # print('Test Utils create vocabulary')
 # vocabulary = Utils.create_vocabulary_from_dict(doc_structure)

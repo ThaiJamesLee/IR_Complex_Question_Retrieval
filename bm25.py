@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 import math
+import time
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+
 __author__ = 'Duc Tai Ly'
 
 
@@ -14,6 +17,7 @@ class BM25:
         :param k:  default: k = 1.2, k is best in [1.2, 2.0]
         """
         self.documents = documents
+        self.avg_doc_len = self.get_average_doc_length()
         if b is None:
             self.b = 0.75
         else:
@@ -97,16 +101,21 @@ class BM25:
         terms = query.split()
 
         doc_length = self.get_doc_length(doc_id)
-        avg_doc_length = self.get_average_doc_length()
+        avg_doc_length = self.avg_doc_len
+
+        doc_len_normalized = doc_length/avg_doc_length
 
         for term in terms:
             term_freq = self.get_term_frequency_in_doc(term, doc_id)
-            counter = term_freq * (self.k + 1)
-            denominator = term_freq + self.k * (1 - self.b + self.b * doc_length/avg_doc_length)
-            idf = self.idf_weight_2(term)
-            # relevance score of term in current document
-            term_score = idf * counter/denominator
-            score = score + term_score
+            if term_freq != 0:
+                counter = term_freq * (self.k + 1)
+                denominator = term_freq + self.k * (1 - self.b + self.b * doc_len_normalized)
+                idf = self.idf_weight_2(term)
+                # relevance score of term in current document
+                term_score = idf * counter/denominator
+                score = score + term_score
+            else:
+                score = 0
         return score
 
     def compute_relevance_on_corpus(self, query):
@@ -115,6 +124,8 @@ class BM25:
         :param query: input as string separated by whitespaces
         :return: dict of {docid: relevance_score}
         """
+
+        print('Compute Query: '+query)
         scores = {}
         for doc_id, terms in self.documents.items():
             score = self.relevance(doc_id, query)
