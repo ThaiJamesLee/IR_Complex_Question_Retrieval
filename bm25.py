@@ -79,6 +79,7 @@ class BM25:
     def idf_weight_2(self, term):
         """
         see:  https://www.elastic.co/blog/practical-bm25-part-2-the-bm25-algorithm-and-its-variables
+        idf = ln((1+(#docs-df+0.5))/())
         :param term: get weight based on article
         :return: the idf weight for given term.
         """
@@ -107,24 +108,22 @@ class BM25:
 
         for term in terms:
             term_freq = self.get_term_frequency_in_doc(term, doc_id)
-            if term_freq != 0:
+            if term_freq > 0:
                 counter = term_freq * (self.k + 1)
                 denominator = term_freq + self.k * (1 - self.b + self.b * doc_len_normalized)
                 idf = self.idf_weight_2(term)
                 # relevance score of term in current document
                 term_score = idf * counter/denominator
                 score = score + term_score
-            else:
-                score = 0
         return score
 
     def compute_relevance_on_corpus(self, query):
         """
+
         computes relevance score for each document, with given query
         :param query: input as string separated by whitespaces
         :return: dict of {docid: relevance_score}
         """
-
         print('Compute Query: '+query)
         scores = {}
         for doc_id, terms in self.documents.items():

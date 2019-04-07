@@ -71,12 +71,11 @@ class Utils:
 
     @staticmethod
     def get_doc_and_relevance_by_query(query, df):
-
         """
 
         :param query: The unprocessed query.
         :param df: The dataframe that contains columns query, q0, docid, rel.
-        :return:
+        :return: A datagrame with docid, rel as columns
         """
         y_true = df[df['query'] == query][['docid', 'rel']]
         return y_true
