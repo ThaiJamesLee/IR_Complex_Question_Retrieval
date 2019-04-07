@@ -18,75 +18,136 @@ from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 
 
-class Preprocess:
-    def __init__(self):
-        self.paragraphs = []        # paragraph data
-        self.paragraph_ids = []     # paragraph id
-        self.documents = []         # processed paragraph
-        self.y_true = []            # query information (query, q0, docid, rel)
-        self.raw_query = []         # query from page information
-        self.processed_query = []   # processed query
-        self.page_content = []      # page paragraphs
-        self.page_name = []         # page title, headings
-        self.article_paragraph = {} # dict {article_id:para_id}
-        self.article_section = {}   # dict {article_id:section_id}
-        self.section_paragraph = {} # dict {section_id:para_id}
-        self.para_art_sec = {}      # dict {para_id:article_id/section_id}
+class Preprocess(object):
+
+    def __init__(self, para_path, page_path, *query_path):
+        """ get data and structure from file
+        Parameters
+        ----------
+        para_path(str): paragraph collection input file path
+        page_path(str): page file input file path
+        query_path(str, optional): query file input file path
+
+        Attributes
+        ----------
+        paragraphs(:obj:'list' of :obj:'Para') : paragraph collection
+        paragraph_ids(:obj:'list' of 'str')) : paragraph_id
+        documents(:obj:'list' of :obj:'list' of 'str')) : processed paragraph
+        raw_query(): query from page information
+        processed_query(): processed query
+        page_content(): page paragraphs
+        page_name(): page title, headings
+        article_paragraph(dict {article_id:para_id})
+        article_section(dict {article_id:section_id})
+        section_paragraph(dict {section_id:para_id})
+        para_art_sec(dict {para_id:article_id/section_id})
+        train(dataframe): query(raw), q0, docid, rel
+        test(dataframe): query(raw), q0, docid, rel
+        process_train(dataframe): query(processed), q0, docid, rel
+        process_test(dataframe): query(processed), q0, docid, rel
+        """
+        self.paragraphs, self.paragraph_ids, self.documents = Preprocess.load_paragraph(para_path)
+        self.y_true, self.raw_query, self.processed_query = Preprocess.load_query(*query_path)
+        self.page_content, self.page_name = Preprocess.load_page(page_path)
+        self.article_paragraph = {}
+        self.article_section = {}
+        self.section_paragraph = {}
+        self.para_art_sec = {}
         self.para_in_page = []
         self.section_in_page = []
-        # set preprocess parameters
-        self.stemmer = PorterStemmer()
-        self.regex = re.compile(f'[{re.escape(string.punctuation)}]')
-        self.stopword = set(stopwords.words("english"))
-        self.stopword.update('and')
-        self.new_punctuation = np.array(string.punctuation)
+        self.paragraph_article_section_relation()
+        self.train, self.test = self.create_train_test()
+        self.process_train = Preprocess.process_query_in_test(self.train, self.raw_query, self.processed_query)
+        self.process_test = Preprocess.process_query_in_test(self.test, self.raw_query, self.processed_query)
+        pickle.dump(self.process_train, open('processed_data/process_train.pkl', 'wb'))
+        pickle.dump(self.process_test, open('processed_data/process_test.pkl', 'wb'))
 
-    def preprocess(self, docs):
-        processed_doc = []
+    @staticmethod
+    def preprocess(docs):
+        # set preprocess parameters
+        stemmer = PorterStemmer()
+        regex = re.compile(f'[{re.escape(string.punctuation)}]')
+        stopword = set(stopwords.words("english"))
+        stopword.update('and')
+        new_punctuation = np.array(string.punctuation)
         # preprocess data
+        processed_doc = []
         for idx, doc in enumerate(docs):
             if type(doc) == trec_car.read_data.Paragraph:
                 doc = doc.get_text()
             processed_doc.append(" ".join(
                 [
-                    self.stemmer.stem(i)
-                    for i in self.regex.sub(' ', doc).split()
-                    if(i != " ") & (i not in self.stopword) & (not i.isdigit()) & (i not in self.new_punctuation)
+                    stemmer.stem(i)
+                    for i in regex.sub(' ', doc).split()
+                    if(i != " ") & (i not in stopword) & (not i.isdigit()) & (i not in new_punctuation)
                 ]
             ))
         print(f'finish preprocess...')
         return processed_doc
 
-    def load_paragraph(self, path):
+    @classmethod
+    def load_paragraph(cls, path):
+        """ load the paragraph collection
+        Parameters
+        ----------
+        para_path(str): paragraph collection input file path
+
+        Returns
+        -------
+        paragraph(:obj: list of :obj:'Para')
+        paragraph_ids(:obj:'list' of 'str')
+        documents(:obj:'list' of :obj:'list' of 'str')
+        """
+        paragraphs = []
+        paragraph_ids = []
         for para in trec_car.read_data.iter_paragraphs(open(path, "rb")):
-            self.paragraphs.append(para)
-            self.paragraph_ids.append(para.para_id)
-        print(f'number of paragraphs: {len(self.paragraph_ids)}')
-        self.documents = self.preprocess(self.paragraphs)
-        pickle.dump(self.paragraphs, open("processed_data/paragraphs.pkl", "wb"))
-        pickle.dump(self.paragraph_ids, open("processed_data/paragraph_ids.pkl", "wb"))
-        pickle.dump(self.documents, open("processed_data/processed_paragraph.pkl", "wb"))
+            paragraphs.append(para)
+            paragraph_ids.append(para.para_id)
+        print(f'number of paragraphs: {len(paragraph_ids)}')
+        documents = cls.preprocess(paragraphs)
+        pickle.dump(paragraphs, open("processed_data/paragraphs.pkl", "wb"))
+        pickle.dump(paragraph_ids, open("processed_data/paragraph_ids.pkl", "wb"))
+        pickle.dump(documents, open("processed_data/processed_paragraph.pkl", "wb"))
         print('finish loading paragraph')
+        return paragraphs, paragraph_ids, documents
 
-    def load_query(self, *args):
-        self.y_true = TrecQrel(args[0]).qrels_data
+    @classmethod
+    def load_query(cls, *args):
+        """ load the query collection
+       Parameters
+       ----------
+       para_path(str): query collection input file path
+
+       Returns
+       -------
+       y_true(:obj: dataframe)
+       raw_query(:obj:'list' of 'str')
+       processed_query(:obj:'list' of :obj:'list' of 'str')
+       """
+        y_true = TrecQrel(args[0]).qrels_data
+        processed_query = []
         for idx in range(1, len(args)):
-            self.y_true = self.y_true.append(TrecQrel(args[idx]).qrels_data)
-        pickle.dump(self.y_true, open("processed_data/y_true.pkl", "wb"))
-        self.raw_query = list(self.y_true['query'])
-        self.raw_query = np.unique(self.raw_query)
-        pickle.dump(self.raw_query, open("processed_data/raw_query.pkl", "wb"))
-        for idx, query in enumerate(self.raw_query):
-            self.processed_query.append(query[7:].replace("/", " ").replace("%20", " ")) # first 7 digits 'enwiki:' for every query is the same
-        self.processed_query = self.preprocess(self.processed_query)
-        pickle.dump(self.processed_query, open("processed_data/processed_query.pkl", "wb"))
-        print('finish loading query')
+            y_true = y_true.append(TrecQrel(args[idx]).qrels_data)
+        raw_query = np.unique((list(y_true['query'])))
+        for idx, query in enumerate(raw_query):
+            # first 7 digits 'enwiki:' for every query is the same
+            processed_query.append(query[7:].replace("/", " ").replace("%20", " "))
+        processed_query = cls.preprocess(processed_query)
+        print(f'finish loading query, num of query: {len(raw_query)}')
+        pickle.dump(y_true, open("processed_data/y_true.pkl", "wb"))
+        pickle.dump(raw_query, open("processed_data/raw_query.pkl", "wb"))
+        pickle.dump(processed_query, open("processed_data/processed_query.pkl", "wb"))
+        return y_true, raw_query, processed_query
 
-    def load_page(self, path):
+    @classmethod
+    def load_page(cls, path):
+        page_content = []
+        page_name = []
         for page in trec_car.read_data.iter_annotations(open(path, "rb")):
-            self.page_content.append(page)
-            self.page_name.append(page.page_id)
-        print(f'number of pages: {len(self.page_content)}')
+            page_content.append(page)
+            page_name.append(page.page_id)
+        print(f'number of pages: {len(page_content)}')
+        return page_content, page_name
 
     def allocate_page(self, section, section_name, page):
         sub_paragraph = []
@@ -145,10 +206,10 @@ class Preprocess:
         return noisy
 
     def create_train_test(self):
-        """
-        Create a train and test dataset (with noise)
+        """ Create a train and test dataset (with noise)
         train set : all true paragraphs, 5 from other section, 5 from other article
         test set : all true paragraphs, and same amount paragraphs from other article
+
         """
         print(f"number of queries {len(self.raw_query)}")
         train = self.y_true[self.y_true['query'] == self.raw_query[0]]
@@ -217,18 +278,13 @@ class Preprocess:
         train.sort_values(by="query", inplace=True)
         pickle.dump(train, open('processed_data/simulated_train.pkl', 'wb'))
         pickle.dump(test, open('processed_data/simulated_test.pkl', 'wb'))
+        return train, test
 
-
-def main():
-    instance = Preprocess()
-    instance.load_paragraph('test200/test200-train/train.pages.cbor-paragraphs.cbor')
-    instance.load_query("test200/test200-train/train.pages.cbor-toplevel.qrels", \
-                        "test200/test200-train/train.pages.cbor-hierarchical.qrels", \
-                        "test200/test200-train/train.pages.cbor-article.qrels")
-    instance.load_page("test200/test200-train//train.pages.cbor")
-    instance.paragraph_article_section_relation()
-    instance.create_train_test()
-
-
-if __name__ == main():
-    main()
+    @staticmethod
+    def process_query_in_test(df, raw_query, processed_query):
+        process_df = df
+        # print(f'num of query: {len(raw_query)}')
+        for q in raw_query:
+            value = processed_query[list(raw_query).index(q)]
+            process_df.loc[df['query'] == q, 'query'] = value
+        return process_df
