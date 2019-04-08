@@ -80,6 +80,22 @@ class Utils:
         y_true = df[df['query'] == query][['docid', 'rel']]
         return y_true
 
+    @staticmethod
+    def get_document_structure_from_data(df, corpus_ids, corpus):
+        """ get term count structure for every doc in dataframe
+        :param df: dataframe contains docid column
+        :param corpus_ids: all docid in corpus
+        :param corpus: all doc in corpus
+        :return: document structure dict{docid, {term, count}}
+        """
+        unique_docid = set(df['docid'])
+        unique_docs = [(docid, corpus[corpus_ids.index(docid)].split()) for docid in unique_docid]
+        doc_structure = {}
+        for (docid, doc) in unique_docs:
+            value = {word: doc.count(word) for word in doc}
+            doc_structure.update({docid: value})
+        return doc_structure
+
 
 class Helper:
     """
