@@ -5,11 +5,15 @@ import math
 
 class Similarity:
 
-    # calculate the cosine similarity score between two vectors vec1, vec2
-    # We assume the vectors are dicts of key, value pairs
-    # Like this: vec1 = {k1:val1, k2:val2, k3:val3}
     @staticmethod
     def cosine_similarity(vec1, vec2):
+        """
+        calculate the cosine similarity score between two vectors vec1, vec2
+        We assume the vectors are dicts of key, value pairs
+        :param vec1: a dictionary {k1:val1, k2:val2, k3:val3}, where value are numerics
+        :param vec2: a dictionary {k1:val1, k2:val2, k3:val3}, where value are numerics
+        :return: Cosine Similarity score
+        """
         counter = 0
         denominator_1 = 0
         denominator_2 = 0
