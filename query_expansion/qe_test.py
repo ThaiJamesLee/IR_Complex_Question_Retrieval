@@ -1,5 +1,8 @@
 from rocchio import RocchioOptimizeQuery
 
+# from performance import Performance
+# from bm25 import BM25
+
 print('================== Implementation of Rocchio ==================')
 print('')
 
@@ -15,6 +18,14 @@ rocchio = RocchioOptimizeQuery(initial_query_vector=query_vector, tf_idf_matrix=
 new_query_vector = rocchio.execute_rocchio(relevant_docs, non_relevant_docs)
 print('initial query : ', query_vector)
 print('expanded query : ', new_query_vector)
+
+# print('================== Implementation of Rocchio with BM25 ==================')
+# print('')
+# # given rel_scores from BM25
+# # given tf-idf matrix
+#
+# bm25 = BM25(doc_structure, k=1.2)
+# p = Performance()
 
 
 

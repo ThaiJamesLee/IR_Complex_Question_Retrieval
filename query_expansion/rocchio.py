@@ -26,14 +26,15 @@ class RocchioOptimizeQuery:
         self.matrix = tf_idf_matrix
 
     # e.g. list of documents that bm25 scores more than 0.1 are considered relevant
-    def get_relevant_docs(self, scores):
-        # some filter rules here...
+    def get_relevant_docs(self, dic):
+        # use Class Performance filter function..
+        # filter_relevance_by_threshold, filter_relevance_by_top_k
         rel_docs = {}
         return rel_docs
 
     # e.g. list of documents that bm25 scores less than 0.1 are considered no relevant
-    def get_nonrelvevant_docs(self, scores):
-        # some filter rules here...
+    def get_nonrelvevant_docs(self, dic):
+        # use filter_pred_negative
         non_reldocs={}
         return non_reldocs
 
@@ -81,7 +82,7 @@ class RocchioOptimizeQuery:
             else:
                 weights[term] = weights[term] - self.gamma * (non_relevant_docs_weights[term]/len(non_relevant_docs))
 
-        # Compute new query vector
+        # Compute new query vector, *to do : save the positive weight for getting new terms
         for term in weights.keys():
             if term in self.query_vector.keys():
                 self.new_query_vector[term] = self.alpha * self.query_vector[term] + weights[term]
@@ -90,3 +91,6 @@ class RocchioOptimizeQuery:
 
         return self.new_query_vector
 
+    # additional terms added based on the Rocchio
+    def get_new_terms(self):
+        pass
