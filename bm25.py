@@ -55,6 +55,8 @@ class BM25:
         :param doc_id: Document id.
         :return: get frequency of term in document with doc_id
         """
+        # We abuse the knowledge that, if the term is not in the document
+        # then we will get an KeyError eventually --> runtime O(1)
         try:
             return self.documents[doc_id][term]
         except KeyError:
@@ -96,7 +98,7 @@ class BM25:
          calculate relevance score of query and corresponding document
         :param doc_id: Document id
         :param query: terms in query should only be separated by blank spaces
-        :return:
+        :return: the bm25 relevance score of the doc, query pair
         """
         score = 0
         terms = query.split()
@@ -108,6 +110,7 @@ class BM25:
 
         for term in terms:
             term_freq = self.get_term_frequency_in_doc(term, doc_id)
+            # we ignore terms without term frequency --> improve performance significantly
             if term_freq > 0:
                 counter = term_freq * (self.k + 1)
                 denominator = term_freq + self.k * (1 - self.b + self.b * doc_len_normalized)
@@ -122,7 +125,7 @@ class BM25:
 
         computes relevance score for each document, with given query
         :param query: input as string separated by whitespaces
-        :return: dict of {docid: relevance_score}
+        :return: dict of {docid: relevance_score, ...}
         """
         print('Compute Query: '+query)
         scores = {}

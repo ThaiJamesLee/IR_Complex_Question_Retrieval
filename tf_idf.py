@@ -4,7 +4,14 @@ import math
 import numpy as np
 from utils import Utils
 
-
+"""
+    sum
+    for each docvector:
+        sum = sum each squared value
+    sqrt(sum)
+    for each value in docvector
+        value = value/sqrt(sum)
+"""
 class TFIDF:
     """
     Class that calculates the tf-idf matrix with given term-doc matrix.
@@ -40,6 +47,7 @@ class TFIDF:
     # create idf vector
     @staticmethod
     def create_idf_matrix(matrix):
+        print('Prepare IDF-Vector')
         """
 
         :param matrix: The term-doc matrix
@@ -69,9 +77,10 @@ class TFIDF:
 
         Implementation like in slides Lecture 4 p.14
         tf(t,d) = (1 + log10(ft,d)) / (1 + log10 (max{ft’,d : t’ ∈ d}))
-        :param matrix:
+        :param matrix: a dict with the structure {docid: {term: tf-value, ...}, ...}
         :return:
         """
+        print('Prepare TF-Matrix')
         tf_matrix = {}
         for k, v in matrix.items():
             max_freq = TFIDF.get_max_freq_term(matrix, k)
@@ -85,6 +94,7 @@ class TFIDF:
     def create_tf_idf_matrix(self):
         """
         Creates a tf-idf matrix.
+        Update: normalized tf-idf with root of squared sum as denominator for normalization
         :return: It is a dict containing {docid: {term_1: tfidf-value, term_2: tfidf-value, ...}, ...}
         """
         matrix = self.documents
@@ -93,10 +103,22 @@ class TFIDF:
         tf_matrix = TFIDF.create_tf_matrix(matrix)
         # based on the tf_matrix and idf_vector, we calculate the tf_idf_matrix
         tf_idf_matrix = {}
+        doc_denominator_map = {}
         for k, v in tf_matrix.items():
+            squared_sum = 0
             for word in v:
                 value = v[word] * self.idf_vector[word]
+                # calculate squared sum for each document vector
+                squared_sum += math.pow(value, 2)
+                # put the tf-idf values (no normalization) into the tf-idf matrix
                 Utils.add_ele_to_matrix(tf_idf_matrix, k, word, value)
+            # take square root of squared sum
+            squared_sum = math.sqrt(squared_sum)
+            doc_denominator_map.update({k: squared_sum})
+        print("Normalize the TF-IDF Matrix values")
+        for doc_id, denom in doc_denominator_map.items():
+            for term, value in tf_idf_matrix[doc_id].items():
+                tf_idf_matrix[doc_id].update({term: value/denom})
         return tf_idf_matrix
 
     def create_query_vector(self, query):
@@ -118,3 +140,12 @@ class TFIDF:
                 # thus, ignore the term by removing from query
                 word_dict.pop(k)
         return word_dict
+
+    @staticmethod
+    def normalize_tf_idf(matrix):
+        """
+
+        :param matrix: tf-idf dict
+        :return: normalized tf-idf dict
+        """
+        pass
