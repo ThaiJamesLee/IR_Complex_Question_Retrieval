@@ -17,6 +17,7 @@ from nltk.corpus import stopwords
 import trec_car.read_data
 
 from utils import Utils
+from preprocessing import Preprocess
 
 #################
 # Stemmer setup
@@ -27,26 +28,10 @@ regex = re.compile(f'[{re.escape(string.punctuation)}]')
 stopword = set(stopwords.words("english"))
 
 
-def preprocess(docss):
-    processed_doc = []
-    # preprocess data
-    for idx, doc in enumerate(docss):
-        if type(doc) == trec_car.read_data.Paragraph:
-            doc = doc.get_text()
-        processed_doc.append(" ".join(
-            [
-                stemmer.stem(i)
-                for i in regex.sub(' ', doc).split()
-                if (i != " ") & (i not in stopword) & (not i.isdigit()) & (i not in new_punctuation)
-            ]
-        ))
-    print(f'finish preprocess...')
-    return processed_doc
-
 ##################
 # Load test and processed data
 ##################
-
+print(len(pickle.load(open('cache/avg_emb_vec_glove_840B_300d.pkl', 'rb'))))
 
 print('================== Load Data ===================')
 # contains list of query strings. querty terms are separated by whitespace
@@ -70,7 +55,7 @@ index = 0
 N = 100
 for idx, query in enumerate(raw_query):
     if index < N:
-        prep = preprocess([query[7:].replace("/", " ").replace("%20", " ")])
+        prep = Preprocess.preprocess([query[7:].replace("/", " ").replace("%20", " ")])
         query_map.update({query: prep[0]})
         index += 1
     else:
