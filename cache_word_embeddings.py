@@ -5,14 +5,15 @@ import pickle
 import numpy as np
 
 print('Load Data...')
-# Here load the pre-trained glove model
-# Not included in the git, since it is 5GB big.
-model = WordEmbedding('glove.840B.300d.txt')
 
 # Load Data to create the count matrix
 paragraph_ids = pickle.load(open('processed_data/paragraph_ids.pkl', 'rb'))
 corpus = pickle.load(open('processed_data/processed_paragraph.pkl', 'rb'))
 test = pickle.load(open('processed_data/simulated_test.pkl', 'rb'))
+
+# Here load the pre-trained glove model
+# Not included in the git, since it is 5GB big.
+model = WordEmbedding('glove.840B.300d.txt')
 
 print('Prepare Data Structures...')
 unique_doc = np.unique(list(test['docid']))
