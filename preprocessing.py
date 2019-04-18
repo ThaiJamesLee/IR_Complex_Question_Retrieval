@@ -16,11 +16,12 @@ import re
 import string
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
+from nltk.stem import WordNetLemmatizer
 
 
 class Preprocess(object):
 
-    def __init__(self, para_path, page_path, *query_path):
+    def __init__(self, process_type, para_path, page_path, *query_path):
         """ get data and structure from file
         Parameters
         ----------
@@ -46,8 +47,8 @@ class Preprocess(object):
         process_train(dataframe): query(processed), q0, docid, rel
         process_test(dataframe): query(processed), q0, docid, rel
         """
-        self.paragraphs, self.paragraph_ids, self.documents = Preprocess.load_paragraph(para_path)
-        self.y_true, self.raw_query, self.processed_query = Preprocess.load_query(*query_path)
+        self.paragraphs, self.paragraph_ids, self.documents = Preprocess.load_paragraph(para_path, process_type)
+        self.y_true, self.raw_query, self.processed_query = Preprocess.load_query(process_type, *query_path)
         self.page_content, self.page_name = Preprocess.load_page(page_path)
         self.article_paragraph = {}
         self.article_section = {}
@@ -63,35 +64,48 @@ class Preprocess(object):
         pickle.dump(self.process_test, open('processed_data/process_test.pkl', 'wb'))
 
     @staticmethod
-    def preprocess(docs):
+    def preprocess(process_type, docs):
         # set preprocess parameters
         stemmer = PorterStemmer()
+        wordnet_lemmatizer = WordNetLemmatizer()
         regex = re.compile(f'[{re.escape(string.punctuation)}]')
         stopword = set(stopwords.words("english"))
         stopword.update('and')
         new_punctuation = np.array(string.punctuation)
         # preprocess data
         processed_doc = []
-        for idx, doc in enumerate(docs):
-            if type(doc) == trec_car.read_data.Paragraph:
-                doc = doc.get_text()
-            processed_doc.append(" ".join(
-                [
-                    stemmer.stem(i)
-                    for i in regex.sub(' ', doc).split()
-                    if(i != " ") & (i not in stopword) & (not i.isdigit()) & (i not in new_punctuation)
-                ]
-            ))
+        if process_type == 'stem':
+            for idx, doc in enumerate(docs):
+                if type(doc) == trec_car.read_data.Paragraph:
+                    doc = doc.get_text()
+                processed_doc.append(" ".join(
+                    [
+                        stemmer.stem(i)
+                        for i in regex.sub(' ', doc).split()
+                        if(i != " ") & (i not in stopword) & (not i.isdigit()) & (i not in new_punctuation)
+                    ]
+                ))
+        elif process_type == 'lemma':
+            for idx, doc in enumerate(docs):
+                if type(doc) == trec_car.read_data.Paragraph:
+                    doc = doc.get_text()
+                processed_doc.append(" ".join(
+                    [
+                        wordnet_lemmatizer.lemmatize(i)
+                        for i in regex.sub(' ', doc).split()
+                        if(i != " ") & (i not in stopword) & (not i.isdigit()) & (i not in new_punctuation)
+                    ]
+                ))
         print(f'finish preprocess...')
         return processed_doc
 
     @classmethod
-    def load_paragraph(cls, path):
+    def load_paragraph(cls, path, process_type):
         """ load the paragraph collection
         Parameters
         ----------
         para_path(str): paragraph collection input file path
-
+        process_type(str): stem or lemma
         Returns
         -------
         paragraph(:obj: list of :obj:'Para')
@@ -104,26 +118,27 @@ class Preprocess(object):
             paragraphs.append(para)
             paragraph_ids.append(para.para_id)
         print(f'number of paragraphs: {len(paragraph_ids)}')
-        documents = cls.preprocess(paragraphs)
+
         pickle.dump(paragraphs, open("processed_data/paragraphs.pkl", "wb"))
         pickle.dump(paragraph_ids, open("processed_data/paragraph_ids.pkl", "wb"))
-        pickle.dump(documents, open("processed_data/processed_paragraph.pkl", "wb"))
+        documents = cls.preprocess(process_type, paragraphs)
+        pickle.dump(documents, open(f"processed_data/{process_type}_processed_paragraph.pkl", "wb"))
         print('finish loading paragraph')
         return paragraphs, paragraph_ids, documents
 
     @classmethod
-    def load_query(cls, *args):
+    def load_query(cls, process_type, *args):
         """ load the query collection
-       Parameters
-       ----------
-       para_path(str): query collection input file path
-
-       Returns
-       -------
-       y_true(:obj: dataframe)
-       raw_query(:obj:'list' of 'str')
-       processed_query(:obj:'list' of :obj:'list' of 'str')
-       """
+        Parameters
+        ----------
+        para_path(str): query collection input file path
+        process_type(str): stem or lemma
+        Returns
+        -------
+        y_true(:obj: dataframe)
+        raw_query(:obj:'list' of 'str')
+        processed_query(:obj:'list' of :obj:'list' of 'str')
+        """
         y_true = TrecQrel(args[0]).qrels_data
         processed_query = []
         for idx in range(1, len(args)):
@@ -132,11 +147,11 @@ class Preprocess(object):
         for idx, query in enumerate(raw_query):
             # first 7 digits 'enwiki:' for every query is the same
             processed_query.append(query[7:].replace("/", " ").replace("%20", " "))
-        processed_query = cls.preprocess(processed_query)
+        processed_query = cls.preprocess(process_type, processed_query)
         print(f'finish loading query, num of query: {len(raw_query)}')
         pickle.dump(y_true, open("processed_data/y_true.pkl", "wb"))
         pickle.dump(raw_query, open("processed_data/raw_query.pkl", "wb"))
-        pickle.dump(processed_query, open("processed_data/processed_query.pkl", "wb"))
+        pickle.dump(processed_query, open(f"processed_data/{process_type}_processed_query.pkl", "wb"))
         return y_true, raw_query, processed_query
 
     @classmethod
