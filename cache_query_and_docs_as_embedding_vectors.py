@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+__author__ = 'Duc Tai Ly'
+
 import pickle
 import numpy as np
 import string
@@ -63,6 +66,7 @@ for qu, qp in query_map.items():
         try:
             sum_embedding_vectors = np.add(sum_embedding_vectors, cached_embeddings[term])
         except KeyError:
+            # print('passed', term)
             pass
 
     for idx in range(vector_dimension):
@@ -82,11 +86,8 @@ for docid, terms in doc_structure.items():
             try:
                 sum_embedding_vectors = np.add(sum_embedding_vectors, cached_embeddings[term])
             except KeyError:
+                # print('passed', term)
                 pass
-
-    # for idx in range(vector_dimension):
-       # sum_embedding_vectors[idx] = sum_embedding_vectors[idx] / number_terms
-
         sum_embedding_vectors /= number_terms
 
     doc_embedding_vectors.update({docid: sum_embedding_vectors})
