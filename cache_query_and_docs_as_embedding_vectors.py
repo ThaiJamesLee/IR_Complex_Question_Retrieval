@@ -3,16 +3,12 @@ __author__ = 'Duc Tai Ly'
 
 import pickle
 import numpy as np
-import string
-import re
 
-from nltk.stem.porter import PorterStemmer
-from nltk.corpus import stopwords
 from preprocessing import Preprocess
 
 
 cached_embeddings = pickle.load(open('cache/word_embedding_vectors.pkl', 'rb'))
-corpus = pickle.load(open('processed_data/processed_paragraph.pkl', 'rb'))
+corpus = pickle.load(open('processed_data/lemma_processed_paragraph.pkl', 'rb'))
 raw_corpus = pickle.load(open('processed_data/paragraphs.pkl', 'rb'))
 corpusid = pickle.load(open('processed_data/paragraph_ids.pkl', 'rb'))
 
@@ -21,13 +17,6 @@ corpusid = pickle.load(open('processed_data/paragraph_ids.pkl', 'rb'))
 # glove.840.300d
 vector_dimension = 300
 
-#################
-# Stemmer setup
-#################
-stemmer = PorterStemmer()
-new_punctuation = np.array(string.punctuation)
-regex = re.compile(f'[{re.escape(string.punctuation)}]')
-stopword = set(stopwords.words("english"))
 
 # create queries
 raw_query = pickle.load(open('processed_data/raw_query.pkl', 'rb'))
@@ -37,7 +26,7 @@ index = 0
 N = 100
 for idx, query in enumerate(raw_query):
     if index < N:
-        prep = Preprocess.preprocess([query[7:].replace("/", " ").replace("%20", " ")])
+        prep = Preprocess.preprocess('lemma', [query[7:].replace("/", " ").replace("%20", " ")])
         query_map.update({query: prep[0]})
         index += 1
     else:
@@ -74,10 +63,11 @@ for qu, qp in query_map.items():
 
     query_embedding_vector.update({qp: sum_embedding_vectors})
 
+# avg_query_embeddings.pkl contains {processed_query: nparray, ...}
 pickle.dump(query_embedding_vector, open('cache/avg_query_embeddings.pkl', 'wb'))
 
-doc_embedding_vectors = {}
 # create cache for document average word embedding vector
+doc_embedding_vectors = {}
 for docid, terms in doc_structure.items():
     sum_embedding_vectors = np.zeros(vector_dimension)
     number_terms = len(terms.keys())
@@ -91,9 +81,12 @@ for docid, terms in doc_structure.items():
         sum_embedding_vectors /= number_terms
 
     doc_embedding_vectors.update({docid: sum_embedding_vectors})
-pickle.dump(query_embedding_vector, open('cache/avg_doc_embeddings.pkl', 'wb'))
+# avg_doc_embeddings.pkl contains {docid: nparray, ...}
+pickle.dump(doc_embedding_vectors, open('cache/avg_doc_embeddings.pkl', 'wb'))
 
 print(pickle.load(open('cache/avg_doc_embeddings.pkl', 'rb')))
+# print(pickle.load(open('cache/avg_query_embeddings.pkl', 'rb')))
+
 
 
 

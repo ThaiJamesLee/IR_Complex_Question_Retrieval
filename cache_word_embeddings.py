@@ -11,7 +11,7 @@ print('Load Data...')
 
 # Load Data to create the count matrix
 paragraph_ids = pickle.load(open('processed_data/paragraph_ids.pkl', 'rb'))
-corpus = pickle.load(open('processed_data/processed_paragraph.pkl', 'rb'))
+corpus = pickle.load(open('processed_data/lemma_processed_paragraph.pkl', 'rb'))
 test = pickle.load(open('processed_data/simulated_test.pkl', 'rb'))
 
 # Here load the pre-trained glove model
@@ -42,6 +42,7 @@ for term in vocabulary:
         print('Save vector of term: ', term)
         term_embedding_vector.update({term: model.get_word_vector_2(term)})
     except KeyError:
+        print('Passed Term = ', term)
         pass
 
 print('Dump dict of term and embedding vector in the cache...')

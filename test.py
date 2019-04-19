@@ -38,7 +38,7 @@ print('================== Load Data ===================')
 # contains list of query strings. querty terms are separated by whitespace
 queries = pickle.load(open('processed_data/processed_query.pkl', 'rb'))
 # load paragraph corpus that contains list of strings separated by whitespace.
-corpus = pickle.load(open('processed_data/processed_paragraph.pkl', 'rb'))
+corpus = pickle.load(open('processed_data/lemma_processed_paragraph.pkl', 'rb'))
 test = pickle.load(open('processed_data/simulated_test.pkl', 'rb'))
 paragraph_ids = pickle.load(open('processed_data/paragraph_ids.pkl', 'rb'))
 unique_query = np.unique(list(test['query']))
@@ -56,7 +56,7 @@ index = 0
 N = 100
 for idx, query in enumerate(raw_query):
     if index < N:
-        prep = Preprocess.preprocess([query[7:].replace("/", " ").replace("%20", " ")])
+        prep = Preprocess.preprocess('lemma',[query[7:].replace("/", " ").replace("%20", " ")])
         query_map.update({query: prep[0]})
         index += 1
     else:
