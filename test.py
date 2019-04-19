@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+__author__ = 'Duc Tai Ly'
 """
 this is used to test implementations
 and to show how to use the implemented code
@@ -31,7 +32,7 @@ stopword = set(stopwords.words("english"))
 ##################
 # Load test and processed data
 ##################
-print(len(pickle.load(open('cache/avg_emb_vec_glove_840B_300d.pkl', 'rb'))))
+# print(len(pickle.load(open('cache/avg_emb_vec_glove_840B_300d.pkl', 'rb'))))
 
 print('================== Load Data ===================')
 # contains list of query strings. querty terms are separated by whitespace

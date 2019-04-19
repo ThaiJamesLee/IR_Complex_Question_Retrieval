@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+__author__ = 'Duc Tai Ly'
+
 from wordembedding import WordEmbedding
 from utils import Utils
 
