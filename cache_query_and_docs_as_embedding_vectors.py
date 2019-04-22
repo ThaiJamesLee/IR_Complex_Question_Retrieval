@@ -23,8 +23,8 @@ class Caching:
         """
         self.process_type = process_type
         if process_type == 'lemma':
-            self.corpus = pickle.load(open('processed_data/low_lemma_processed_paragraph.pkl', 'rb'))
-            self.queries = pickle.load(open('processed_data/low_lemma_processed_query.pkl', 'rb'))
+            self.corpus = pickle.load(open('processed_data/lemma_processed_paragraph.pkl', 'rb'))
+            self.queries = pickle.load(open('processed_data/lemma_processed_query.pkl', 'rb'))
         elif process_type == 'stem':
             self.corpus = pickle.load(open('processed_data/processed_paragraph.pkl', 'rb'))
             self.queries = pickle.load(open('processed_data/processed_query.pkl', 'rb'))
