@@ -12,6 +12,8 @@ from utils import Utils
     for each value in docvector
         value = value/sqrt(sum)
 """
+
+
 class TFIDF:
     """
     Class that calculates the tf-idf matrix with given term-doc matrix.
@@ -130,9 +132,10 @@ class TFIDF:
         tokens = query.split()
         tokens_set = set(tokens)
         word_dict = dict.fromkeys(tokens_set, 0)
+        word_dict_temp = dict.fromkeys(tokens_set, 0)
         for word in tokens:
             word_dict[word] += 1
-        for k, v in word_dict.items():
+        for k, v in word_dict_temp.items():
             try:
                 word_dict[k] = self.idf_vector[k] * v
             except KeyError:
@@ -140,12 +143,3 @@ class TFIDF:
                 # thus, ignore the term by removing from query
                 word_dict.pop(k)
         return word_dict
-
-    @staticmethod
-    def normalize_tf_idf(matrix):
-        """
-
-        :param matrix: tf-idf dict
-        :return: normalized tf-idf dict
-        """
-        pass

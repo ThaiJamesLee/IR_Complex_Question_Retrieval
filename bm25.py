@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 import math
-import time
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 __author__ = 'Duc Tai Ly'
 
@@ -127,7 +125,7 @@ class BM25:
         :param query: input as string separated by whitespaces
         :return: dict of {docid: relevance_score, ...}
         """
-        print('Compute Query: '+query)
+        print('Calculate BM25 relevance: ', query)
         scores = {}
         for doc_id, terms in self.documents.items():
             score = self.relevance(doc_id, query)
