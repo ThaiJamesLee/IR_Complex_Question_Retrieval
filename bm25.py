@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 import math
-import time
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 __author__ = 'Duc Tai Ly'
 
@@ -55,6 +53,8 @@ class BM25:
         :param doc_id: Document id.
         :return: get frequency of term in document with doc_id
         """
+        # We abuse the knowledge that, if the term is not in the document
+        # then we will get an KeyError eventually --> runtime O(1)
         try:
             return self.documents[doc_id][term]
         except KeyError:
@@ -88,7 +88,7 @@ class BM25:
         for k, v in self.documents.items():
             if self.get_term_frequency_in_doc(term, k) > 0:
                 df = df + 1
-        idf = math.log1p(1 + (num_docs - df + 0.5)/(df + 0.5))
+        idf = math.log(1 + (num_docs - df + 0.5)/(df + 0.5))
         return idf
 
     def relevance(self, doc_id, query):
@@ -96,7 +96,7 @@ class BM25:
          calculate relevance score of query and corresponding document
         :param doc_id: Document id
         :param query: terms in query should only be separated by blank spaces
-        :return:
+        :return: the bm25 relevance score of the doc, query pair
         """
         score = 0
         terms = query.split()
@@ -108,6 +108,7 @@ class BM25:
 
         for term in terms:
             term_freq = self.get_term_frequency_in_doc(term, doc_id)
+            # we ignore terms without term frequency --> improve performance significantly
             if term_freq > 0:
                 counter = term_freq * (self.k + 1)
                 denominator = term_freq + self.k * (1 - self.b + self.b * doc_len_normalized)
@@ -122,9 +123,9 @@ class BM25:
 
         computes relevance score for each document, with given query
         :param query: input as string separated by whitespaces
-        :return: dict of {docid: relevance_score}
+        :return: dict of {docid: relevance_score, ...}
         """
-        print('Compute Query: '+query)
+        print('Calculate BM25 relevance: ', query)
         scores = {}
         for doc_id, terms in self.documents.items():
             score = self.relevance(doc_id, query)

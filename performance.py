@@ -4,6 +4,10 @@ import numpy as np
 
 
 class Performance:
+    """
+    This class contains some methods to calculate the performance.
+    Also it contains some methods to process dicts.
+    """
 
     def __init__(self):
         self.precision_scores = {}
@@ -36,6 +40,9 @@ class Performance:
         # contains only documents with < 0 relevance
         total_retrieved = Performance.filter_relevance_by_threshold(predicted)
 
+        # actual values of labeled set
+        # arrays actual_doc_ids and actual_relevance are mapped by there indices
+        # like this {actual_doc_ids[i]: actual_relevance[i], ...} for all i in range
         actual_doc_ids = list(actual['docid'])
         actual_relevance = list(actual['rel'])
 

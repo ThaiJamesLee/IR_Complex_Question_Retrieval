@@ -22,7 +22,7 @@ class Similarity:
             try:
                 counter += v1 * vec2[k1]
             except KeyError:
-                continue
+                pass
         for k2, v2 in vec2.items():
             denominator_2 += math.pow(v2, 2)
 
@@ -32,3 +32,36 @@ class Similarity:
         if denominator_1 != 0 and denominator_2 != 0:
             score = counter/(denominator_1*denominator_2)
         return score
+
+    @staticmethod
+    def cosine_similarity_normalized(vec1, vec2):
+        """
+        calculate the cosine similarity score between two vectors vec1, vec2
+        We assume the vectors are dicts of key, value pairs.
+        We assume the vectors are normalized vectors, thus, we skip the denominator calculation
+        :param vec1: a dictionary {k1:val1, k2:val2, k3:val3}, where value are numerics
+        :param vec2: a dictionary {k1:val1, k2:val2, k3:val3}, where value are numerics
+        :return: Cosine Similarity score
+        """
+        counter = 0
+        for k1, v1 in vec1.items():
+            try:
+                counter += v1 * vec2[k1]
+            except KeyError:
+                pass
+        return counter
+
+    @staticmethod
+    def cosine_similarity_array(vec1, vec2):
+        if len(vec1) != len(vec2):
+            raise Exception('The two vectors must be of the same size!')
+        else:
+            counter = 0
+            # denominator_1 = 0
+            # denominator_2 = 0
+            # for index, value in enumerate(vec1):
+            #     # denominator_1 += math.pow(value, 2)
+            #     # denominator_2 += math.pow(vec2[index], 2)
+            #     counter += value * vec2[index]
+            # return counter
+            return vec1.dot(vec2)
