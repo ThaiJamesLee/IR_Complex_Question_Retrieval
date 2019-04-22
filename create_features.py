@@ -146,11 +146,11 @@ class FeatureGenerator:
 
 
 print('================== Load Data ===================')
-# feature_generator = FeatureGenerator()
+feature_generator = FeatureGenerator()
 #
-# feature_generator.create_cache()
+feature_generator.create_cache()
 #
-# feature_generator.generate_features()
+feature_generator.generate_features()
 
 # queries = pickle.load(open('processed_data/lemma_processed_query.pkl', 'rb'))
 # print(queries)
@@ -167,14 +167,14 @@ print(bm25['activity theory'])
 print(tfidf['activity theory'])
 print(tfidfem['activity theory'])
 
-# from preprocessing import Preprocess
-#
+#from preprocessing import Preprocess
+
 # obj = Preprocess('lemma',
-#                  'test200-train/train.pages.cbor-paragraphs.cbor',
-#                  'test200-train//train.pages.cbor',
-#                  'test200-train/train.pages.cbor-toplevel.qrels',
-#                  'test200-train/train.pages.cbor-hierarchical.qrels',
-#                  'test200-train/train.pages.cbor-article.qrels')
+#              'test200-train/train.pages.cbor-paragraphs.cbor',
+#              'test200-train//train.pages.cbor',
+#              'test200-train/train.pages.cbor-toplevel.qrels',
+#              'test200-train/train.pages.cbor-hierarchical.qrels',
+#              'test200-train/train.pages.cbor-article.qrels')
 
 # doc = pickle.load(open('processed_data/lemma_processed_paragraph.pkl', 'rb'))
 # que = pickle.load(open('processed_data/lemma_processed_query.pkl', 'rb'))
