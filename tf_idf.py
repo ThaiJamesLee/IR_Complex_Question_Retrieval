@@ -137,7 +137,7 @@ class TFIDF:
             word_dict[word] += 1
         for k, v in word_dict_temp.items():
             try:
-                word_dict[k] = self.idf_vector[k] * v
+                word_dict[k] = self.idf_vector[k] * word_dict[k]
             except KeyError:
                 # KeyError only when term is not in idf vector
                 # thus, ignore the term by removing from query

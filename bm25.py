@@ -88,7 +88,7 @@ class BM25:
         for k, v in self.documents.items():
             if self.get_term_frequency_in_doc(term, k) > 0:
                 df = df + 1
-        idf = math.log1p(1 + (num_docs - df + 0.5)/(df + 0.5))
+        idf = math.log(1 + (num_docs - df + 0.5)/(df + 0.5))
         return idf
 
     def relevance(self, doc_id, query):

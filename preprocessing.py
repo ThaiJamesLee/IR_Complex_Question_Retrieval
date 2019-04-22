@@ -91,7 +91,7 @@ class Preprocess(object):
                     doc = doc.get_text()
                 processed_doc.append(" ".join(
                     [
-                        wordnet_lemmatizer.lemmatize(i)
+                        wordnet_lemmatizer.lemmatize(i).lower()
                         for i in regex.sub(' ', doc).split()
                         if(i != " ") & (i not in stopword) & (not i.isdigit()) & (i not in new_punctuation)
                     ]

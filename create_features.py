@@ -146,11 +146,11 @@ class FeatureGenerator:
 
 
 print('================== Load Data ===================')
-feature_generator = FeatureGenerator()
-
-feature_generator.create_cache()
-
-feature_generator.generate_features()
+# feature_generator = FeatureGenerator()
+#
+# feature_generator.create_cache()
+#
+# feature_generator.generate_features()
 
 # queries = pickle.load(open('processed_data/lemma_processed_query.pkl', 'rb'))
 # print(queries)
@@ -163,6 +163,28 @@ tfidfem = pickle.load(open('cache/cosine_sem_we.pkl', 'rb'))
 
 tfidf = pickle.load(open('cache/cosine_tf_idf.pkl', 'rb'))
 
-print(bm25['Activity theory'])
-print(tfidf['Activity theory'])
-print(tfidfem['Activity theory'])
+print(bm25['activity theory'])
+print(tfidf['activity theory'])
+print(tfidfem['activity theory'])
+
+# from preprocessing import Preprocess
+#
+# obj = Preprocess('lemma',
+#                  'test200-train/train.pages.cbor-paragraphs.cbor',
+#                  'test200-train//train.pages.cbor',
+#                  'test200-train/train.pages.cbor-toplevel.qrels',
+#                  'test200-train/train.pages.cbor-hierarchical.qrels',
+#                  'test200-train/train.pages.cbor-article.qrels')
+
+# doc = pickle.load(open('processed_data/lemma_processed_paragraph.pkl', 'rb'))
+# que = pickle.load(open('processed_data/lemma_processed_query.pkl', 'rb'))
+# print(f'doc: {doc[100:200]}')
+# print(f'query: {que[100:200]}')
+#
+# docstem = pickle.load(open('processed_data/processed_paragraph.pkl', 'rb'))
+# questem = pickle.load(open('processed_data/processed_query.pkl', 'rb'))
+# print(f'doc: {docstem[100:200]}')
+# print(f'query: {questem[100:200]}')
+#
+# print(f'doc: {obj.documents[100:200]}')
+# print(f'query: {obj.processed_query[100:200]}')
