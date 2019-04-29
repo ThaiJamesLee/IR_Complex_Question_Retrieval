@@ -5,6 +5,7 @@ import pickle
 import numpy as np
 
 from preprocessing import Preprocess
+from utils import Utils
 
 
 class Caching:
@@ -25,9 +26,11 @@ class Caching:
         if process_type == 'lemma':
             self.corpus = pickle.load(open('processed_data/lemma_processed_paragraph.pkl', 'rb'))
             self.queries = pickle.load(open('processed_data/lemma_processed_query.pkl', 'rb'))
+            self.tf_idf_cache = 'cache/lemma_tf_idf.pkl'
         elif process_type == 'stem':
             self.corpus = pickle.load(open('processed_data/processed_paragraph.pkl', 'rb'))
             self.queries = pickle.load(open('processed_data/processed_query.pkl', 'rb'))
+            self.tf_idf_cache = 'cache/tf_idf.pkl'
 
         self.cached_embeddings = pickle.load(open('cache/word_embedding_vectors.pkl', 'rb'))
 
@@ -40,9 +43,13 @@ class Caching:
         self.raw_query = pickle.load(open('processed_data/raw_query.pkl', 'rb'))
         # self.query_map = Caching.create_query_map(self.raw_query, self.process_type)
         self.test = pickle.load(open('processed_data/simulated_test.pkl', 'rb'))
-        self.unique_doc = np.unique(list(self.test['docid']))
+        # self.unique_doc = np.unique(list(self.test['docid']))
         self.paragraph_ids = pickle.load(open('processed_data/paragraph_ids.pkl', 'rb'))
         self.doc_structure = self.create_document_corpus()
+
+        # cache file paths
+        self.avg_query_embeddings = 'cache/avg_query_embeddings.pkl'
+        self.avg_doc_embeddings = 'cache/avg_doc_embeddings.pkl'
 
     @staticmethod
     def create_query_map(raw_query, process_type):
@@ -66,12 +73,7 @@ class Caching:
         :return: Returns a dict of {docid: {term: value, ...}, ...}
         """
         print('create document corpus as dict...')
-        c_corpus = [(id, self.corpus[self.paragraph_ids.index(id)].split()) for id in self.unique_doc]
-        doc_structure = dict()
-        for (id, doc) in c_corpus:
-            value = {word: doc.count(word) for word in doc}
-            doc_structure.update({id: value})
-        return doc_structure
+        return Utils.get_document_structure_from_data(self.test, self.paragraph_ids, self.corpus)
 
     def create_query_embeddings(self):
         """
@@ -96,7 +98,7 @@ class Caching:
 
             query_embedding_vector.update({q: sum_embedding_vectors})
         # avg_query_embeddings.pkl contains {processed_query: nparray, ...}
-        pickle.dump(query_embedding_vector, open('cache/avg_query_embeddings.pkl', 'wb'))
+        pickle.dump(query_embedding_vector, open(self.avg_query_embeddings, 'wb'))
 
     def create_document_embeddings(self):
         """
@@ -118,9 +120,7 @@ class Caching:
 
             doc_embedding_vectors.update({docid: sum_embedding_vectors})
         # avg_doc_embeddings.pkl contains {docid: nparray, ...}
-        pickle.dump(doc_embedding_vectors, open('cache/avg_doc_embeddings.pkl', 'wb'))
-
-
+        pickle.dump(doc_embedding_vectors, open(self.avg_doc_embeddings, 'wb'))
 
 
 

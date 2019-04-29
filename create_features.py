@@ -6,6 +6,7 @@ import pickle
 from bm25 import BM25
 from tf_idf import TFIDF
 
+from query_expansion.rocchio import RocchioOptimizeQuery
 from performance import Performance
 from similarity import Similarity
 from cache_query_and_docs_as_embedding_vectors import Caching
@@ -42,6 +43,8 @@ class FeatureGenerator:
 
         self.caching = Caching(process_type='lemma')
 
+        self.tf_idf = TFIDF(self.caching.doc_structure)
+
     def calculate_bm25(self):
         """"
         Calculate the relevance scores with BM25, and cache them in a file.
@@ -68,7 +71,9 @@ class FeatureGenerator:
         Calculate cosine similarities of queries and documents, and cache them in a file.
         """
         print('Calculate cosine for tf-idf...')
-        tf_idf = TFIDF(self.caching.doc_structure)
+        # try to open cached file
+        # if not exist, then
+        tf_idf = self.tf_idf
 
         similarity_scores_tf_idf = {}
         for q in self.caching.queries:
@@ -86,9 +91,36 @@ class FeatureGenerator:
         pickle.dump(similarity_scores_tf_idf, open(self.similarity_tf_idf_scores_file, 'wb'))
         print('Saved in', self.similarity_tf_idf_scores_file)
 
-    def calculate_cosine_tf_idf_query_expansion(self):
-        # TODO: code here for tf-idf with query expansion
-        pass
+    def calculate_cosine_tf_idf_query_expansion(self, top_k=10):
+        print('Calculate similarity with query expansion')
+        p = Performance()
+        bm25_relevance_scores = pickle.load(open(self.bm25_scores_file, 'rb'))
+        tf_idf = self.tf_idf
+
+        similarity_scores_tf_idf = {}
+        query_expansion_cache = {}
+        for q in self.caching.queries:
+            query_vector = tf_idf.create_query_vector(q)
+
+            rocchio = RocchioOptimizeQuery(query_vector=query_vector, tf_idf_matrix=tf_idf.term_doc_matrix)
+
+            relevant_docs = p.filter_relevance_by_top_k(bm25_relevance_scores[q], top_k)
+            non_relevant_docs = p.filter_pred_negative(bm25_relevance_scores[q])
+            new_query = rocchio.execute_rocchio(relevant_docs, non_relevant_docs)
+
+            query_expansion_cache.update({q: new_query})
+
+            similarities = {}
+            for docid, terms in tf_idf.term_doc_matrix.items():
+                score = Similarity.cosine_similarity_normalized(new_query, terms)
+                if score > 0:
+                    similarities.update({docid: score})
+            similarity_scores_tf_idf.update({q: similarities})
+
+        print('Save similarities and expanded queries...')
+        pickle.dump(similarity_scores_tf_idf, open('cache/cosine_query_expansion.pkl', 'wb'))
+        pickle.dump(similarity_scores_tf_idf, open('cache/rocchio_expanded_queries.pkl', 'wb'))
+        print('Saved.')
 
     def calculate_cosine_semantic_embeddings(self):
 
@@ -129,9 +161,9 @@ class FeatureGenerator:
         self.caching.create_document_embeddings()
         print('saved.')
 
-    def generate_features(self, ):
+    def generate_features(self):
         print('================== Calculate BM25 scores  ===================')
-        self.calculate_bm25()
+        # self.calculate_bm25()
 
         print('================== Cosine Similarity scores  ===================')
         self.calculate_cosine_tf_idf()
@@ -147,9 +179,9 @@ class FeatureGenerator:
 
 print('================== Load Data ===================')
 feature_generator = FeatureGenerator()
-#
+
 feature_generator.create_cache()
-#
+
 feature_generator.generate_features()
 
 # queries = pickle.load(open('processed_data/lemma_processed_query.pkl', 'rb'))
@@ -163,28 +195,10 @@ tfidfem = pickle.load(open('cache/cosine_sem_we.pkl', 'rb'))
 
 tfidf = pickle.load(open('cache/cosine_tf_idf.pkl', 'rb'))
 
+query_expansion = pickle.load(open('cache/cosine_query_expansion.pkl', 'rb'))
+
 print(bm25['activity theory'])
 print(tfidf['activity theory'])
 print(tfidfem['activity theory'])
+print(query_expansion['activity theory'])
 
-#from preprocessing import Preprocess
-
-# obj = Preprocess('lemma',
-#              'test200-train/train.pages.cbor-paragraphs.cbor',
-#              'test200-train//train.pages.cbor',
-#              'test200-train/train.pages.cbor-toplevel.qrels',
-#              'test200-train/train.pages.cbor-hierarchical.qrels',
-#              'test200-train/train.pages.cbor-article.qrels')
-
-# doc = pickle.load(open('processed_data/lemma_processed_paragraph.pkl', 'rb'))
-# que = pickle.load(open('processed_data/lemma_processed_query.pkl', 'rb'))
-# print(f'doc: {doc[100:200]}')
-# print(f'query: {que[100:200]}')
-#
-# docstem = pickle.load(open('processed_data/processed_paragraph.pkl', 'rb'))
-# questem = pickle.load(open('processed_data/processed_query.pkl', 'rb'))
-# print(f'doc: {docstem[100:200]}')
-# print(f'query: {questem[100:200]}')
-#
-# print(f'doc: {obj.documents[100:200]}')
-# print(f'query: {obj.processed_query[100:200]}')
