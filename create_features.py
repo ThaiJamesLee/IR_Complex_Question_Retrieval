@@ -35,9 +35,6 @@ class FeatureGenerator:
         self.paragraph_id_file = 'processed_data/paragraph_ids.pkl'
         self.test_data_file = 'processed_data/simulated_test.pkl'
 
-        self.avg_query_embeddings_file = 'cache/avg_query_embeddings.pkl'
-        self.avg_doc_embeddings_file = 'cache/avg_doc_embeddings.pkl'
-
         # set here where to save the cached data
         self.bm25_scores_file = 'cache/bm25_scores.pkl'
         self.similarity_tf_idf_scores_file = 'cache/cosine_tf_idf.pkl'
@@ -112,7 +109,6 @@ class FeatureGenerator:
             relevant_docs = p.filter_relevance_by_top_k(bm25_relevance_scores[q], top_k)
             non_relevant_docs = p.filter_pred_negative(bm25_relevance_scores[q])
             new_query = rocchio.execute_rocchio(relevant_docs, non_relevant_docs, 5)
-            print(q, new_query)
             query_expansion_cache.update({q: new_query})
 
             similarities = {}
@@ -132,8 +128,8 @@ class FeatureGenerator:
         # cosine for avg embedding vector
         print('Load cached embeddings...')
 
-        query_embeddings = pickle.load(open(self.avg_query_embeddings_file, 'rb'))
-        document_embeddings = pickle.load(open(self.avg_doc_embeddings_file, 'rb'))
+        query_embeddings = pickle.load(open(self.caching.avg_query_embeddings, 'rb'))
+        document_embeddings = pickle.load(open(self.caching.avg_doc_embeddings, 'rb'))
 
         print('Calculate cosine for avg embedding vectors...')
 
@@ -150,6 +146,31 @@ class FeatureGenerator:
         # dump similarity scores in {query: {docid: score, ...}, ...}
         print('Dump scores in ', 'cache/cosine_sem_we.pkl')
         pickle.dump(similarity_scores_we, open('cache/cosine_sem_we.pkl', 'wb'))
+        # print(similarity_scores_we)
+
+    def calculate_cosine_semantic_embeddings_query_expansion(self):
+
+        # cosine for avg embedding vector
+        print('Load cached embeddings...')
+
+        query_embeddings = pickle.load(open(self.caching.avg_query_expanded_embeddings, 'rb'))
+        document_embeddings = pickle.load(open(self.caching.avg_doc_embeddings, 'rb'))
+
+        print('Calculate cosine for avg embedding vectors...')
+
+        similarity_scores_we = {}
+        for query, vector in query_embeddings.items():
+            print('Calculate similarities for query vector = ', query)
+            similarities = {}
+            for doc, doc_vec in document_embeddings.items():
+                score = Similarity.cosine_similarity_array(vector, doc_vec)
+                if score > 0:
+                    similarities.update({doc: score})
+            similarity_scores_we.update({query: similarities})
+
+        # dump similarity scores in {query: {docid: score, ...}, ...}
+        print('Dump scores in ', 'cache/cosine_sem_we.pkl')
+        pickle.dump(similarity_scores_we, open('cache/cosine_sem_we_query_exp.pkl', 'wb'))
         # print(similarity_scores_we)
 
     def create_cache(self):
@@ -172,17 +193,20 @@ class FeatureGenerator:
         (tf-idf, tf-idf with query expansion, semantic word embedding)
         You can also just call the functions you need. Only use this, if you have none of the scores in cache.
         """
-        print('================== Calculate BM25 scores  ===================')
+        print('================== Calculate BM25 scores  ===========================================')
         self.calculate_bm25()
 
-        print('================== Cosine Similarity scores  ===================')
+        print('================== Cosine Similarity scores  ========================================')
         self.calculate_cosine_tf_idf()
 
         print('================== Cosine Similarity scores with query expansion  ===================')
         self.calculate_cosine_tf_idf_query_expansion()
 
-        print('================== Cosine Similarity scores with semantic word embeddings  ===================')
+        print('================== Cosine Similarity scores with semantic word embeddings  ==========')
         self.calculate_cosine_semantic_embeddings()
+
+        print('================== Cosine semantic word embedding with query expansion ==============')
+        self.calculate_cosine_semantic_embeddings_query_expansion()
 
     def generate_feature_dataframe_1(self):
         """
@@ -233,18 +257,17 @@ class FeatureGenerator:
 
         for qe in queries:
             for docid in docids:
-                scores.append([Utils.get_value_from_key_in_dict(bm25_scores, docid, qe),
-                               Utils.get_value_from_key_in_dict(tfidf_scores, docid, qe),
-                               Utils.get_value_from_key_in_dict(tfidf_word_embedding_scores, docid, qe),
-                               Utils.get_value_from_key_in_dict(query_expansion_scores, docid, qe)])
-                qid.append(query_index)
+                row = [Utils.get_value_from_key_in_dict(bm25_scores, docid, qe),
+                       Utils.get_value_from_key_in_dict(tfidf_scores, docid, qe),
+                       Utils.get_value_from_key_in_dict(tfidf_word_embedding_scores, docid, qe),
+                       Utils.get_value_from_key_in_dict(query_expansion_scores, docid, qe)]
+                if np.sum(row) > 0:
+                    scores.append(row)
+                    qid.append(query_index)
             query_index += 1
 
         scores = np.array(scores)
         qid = np.array(qid)
-
-        print(scores)
-        print(qid)
 
         print('Save Feature Dataframe...')
         pickle.dump(scores, open(self.features_dataframe_file, 'wb'))
@@ -254,7 +277,7 @@ class FeatureGenerator:
 
 print('================== Load Data ===================')
 feature_generator = FeatureGenerator()
-feature_generator.generate_feature_dataframe_2()
+feature_generator.calculate_cosine_semantic_embeddings_query_expansion()
 
 # feature_generator.create_cache()
 # feature_generator.calculate_cosine_semantic_embeddings()

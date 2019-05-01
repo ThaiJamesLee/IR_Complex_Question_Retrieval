@@ -7,6 +7,8 @@ import numpy as np
 from preprocessing import Preprocess
 from utils import Utils
 from tf_idf import TFIDF
+from query_expansion.rocchio import RocchioOptimizeQuery
+from performance import Performance
 
 
 class Caching:
@@ -51,6 +53,7 @@ class Caching:
         # cache file paths
         self.avg_query_embeddings = 'cache/avg_query_embeddings.pkl'
         self.avg_doc_embeddings = 'cache/avg_doc_embeddings.pkl'
+        self.avg_query_expanded_embeddings = 'cache/avg_query_expanded_embeddings.pkl'
 
     @staticmethod
     def create_query_map(raw_query, process_type):
@@ -107,6 +110,48 @@ class Caching:
             query_embedding_vector.update({q: sum_embedding_vectors})
         # avg_query_embeddings.pkl contains {processed_query: nparray, ...}
         pickle.dump(query_embedding_vector, open(self.avg_query_embeddings, 'wb'))
+
+    def create_query_embeddings_query_expansion(self, top_k=10):
+        """
+        Prerequisites: requires cached bm25 scores in cache.
+        You have to create the bm25_scores.pkl first!
+
+        See: create_features.py and run calculate_bm25 function to create it.
+
+        create cache for query average word embedding vector
+        :return:  Returns a dict of {processed query: embedding vector, ...}
+        """
+        p = Performance()
+        query_embedding_vector = {}
+        tf_idf = TFIDF(self.doc_structure)
+        bm25_scores = pickle.load(open('cache/bm25_scores.pkl', 'rb'))
+
+        for q in self.queries:
+            sum_embedding_vectors = np.zeros(self.vector_dimension)  # create initial empty array
+            tfidf_q = tf_idf.create_query_vector(q)
+            rocchio = RocchioOptimizeQuery(query_vector=tfidf_q, tf_idf_matrix=tf_idf.term_doc_matrix)
+            relevant_docs = p.filter_relevance_by_top_k(bm25_scores[q], top_k)
+            non_relevant_docs = p.filter_pred_negative(bm25_scores[q])
+            new_query = rocchio.execute_rocchio(relevant_docs, non_relevant_docs, 5)
+
+            sum_weight = 0
+
+            for term, value in new_query.items():
+                try:
+                    weight = value
+                    sum_weight += weight
+                    we = np.multiply(weight, self.cached_embeddings[term])
+                    sum_embedding_vectors = np.add(sum_embedding_vectors, we)
+                except KeyError:
+                    pass
+
+            for idx in range(self.vector_dimension):
+                sum_embedding_vectors[idx] = sum_embedding_vectors[idx] / sum_weight
+
+            query_embedding_vector.update({q: sum_embedding_vectors})
+        # avg_query_embeddings.pkl contains {processed_query: nparray, ...}
+        pickle.dump(query_embedding_vector, open(self.avg_query_expanded_embeddings, 'wb'))
+        return query_embedding_vector
 
     def create_document_embeddings(self):
         """
