@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import math
-import time
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+import numpy as np
+import pandas as pd
 
 __author__ = 'Duc Tai Ly'
 
@@ -17,6 +17,7 @@ class BM25:
         :param k:  default: k = 1.2, k is best in [1.2, 2.0]
         """
         self.documents = documents
+        self.num_docs = len(self.documents.keys())
         self.avg_doc_len = self.get_average_doc_length()
         if b is None:
             self.b = 0.75
@@ -27,36 +28,32 @@ class BM25:
         else:
             self.k = k
 
-    def get_average_doc_length(self):
-        """
-        :return: documents average length
-        """
-        num_docs = len(self.documents.keys())
-        num_items = 0
-        for k, v in self.documents.items():
-            num_items = num_items + len(v)
-        return num_items/num_docs
-
     def get_doc_length(self, doc_id):
         """
 
         :param doc_id: Document Id.
         :return: document exact length of specified doc_id
         """
-        doc_len = 0
-        for term, value in self.documents[doc_id].items():
-            doc_len += value
-        return doc_len
+        return np.sum(list(self.documents[doc_id].values()))
+
+    def get_average_doc_length(self):
+        """
+        :return: documents average length
+        """
+        num_docs = self.num_docs
+        num_items = 0
+
+        for k, v in self.documents.items():
+            num_items = num_items + len(v)
+        return num_items / num_docs
 
     def get_term_frequency_in_doc(self, term, doc_id):
         """
-
+        if the term is not in the document, then we will get an KeyError eventually --> runtime O(1)
         :param term: Query term.
         :param doc_id: Document id.
         :return: get frequency of term in document with doc_id
         """
-        # We abuse the knowledge that, if the term is not in the document
-        # then we will get an KeyError eventually --> runtime O(1)
         try:
             return self.documents[doc_id][term]
         except KeyError:
@@ -86,11 +83,11 @@ class BM25:
         :return: the idf weight for given term.
         """
         df = 0
-        num_docs = len(self.documents.keys())
+
         for k, v in self.documents.items():
             if self.get_term_frequency_in_doc(term, k) > 0:
                 df = df + 1
-        idf = math.log1p(1 + (num_docs - df + 0.5)/(df + 0.5))
+        idf = math.log(1 + (self.num_docs - df + 0.5)/(df + 0.5))
         return idf
 
     def relevance(self, doc_id, query):
@@ -123,11 +120,12 @@ class BM25:
     def compute_relevance_on_corpus(self, query):
         """
 
-        computes relevance score for each document, with given query
+        computes relevance score for each document, with given query.
+        If the score is 0, then skip.
         :param query: input as string separated by whitespaces
         :return: dict of {docid: relevance_score, ...}
         """
-        print('Compute Query: '+query)
+        print('Calculate BM25 relevance: ', query)
         scores = {}
         for doc_id, terms in self.documents.items():
             score = self.relevance(doc_id, query)

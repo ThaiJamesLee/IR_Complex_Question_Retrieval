@@ -3,7 +3,6 @@ __author__ = 'Duc Tai Ly'
 import math
 import numpy as np
 from utils import Utils
-
 """
     sum
     for each docvector:
@@ -12,13 +11,15 @@ from utils import Utils
     for each value in docvector
         value = value/sqrt(sum)
 """
+
+
 class TFIDF:
     """
     Class that calculates the tf-idf matrix with given term-doc matrix.
     Implementation based on dense vectors.
     """
 
-    def __init__(self, documents):
+    def __init__(self, documents, calc_matrix=True):
         """
 
         :param documents: Should be a document-word count dict
@@ -27,7 +28,7 @@ class TFIDF:
             raise Exception('TFIDF should be initialized with a corpus.')
         self.documents = documents
         self.idf_vector = {}
-        self.term_doc_matrix = self.create_tf_idf_matrix()
+        self.term_doc_matrix = self.create_tf_idf_matrix(calc_matrix)
 
     @staticmethod
     def get_max_freq_term(matrix, doc_id):
@@ -91,7 +92,7 @@ class TFIDF:
                 Utils.add_ele_to_matrix(tf_matrix, k, word, value)
         return tf_matrix
 
-    def create_tf_idf_matrix(self):
+    def create_tf_idf_matrix(self, calc_matrix):
         """
         Creates a tf-idf matrix.
         Update: normalized tf-idf with root of squared sum as denominator for normalization
@@ -100,25 +101,28 @@ class TFIDF:
         matrix = self.documents
         # create the idf vector and the tf matrices
         self.idf_vector = self.create_idf_matrix(matrix)
-        tf_matrix = TFIDF.create_tf_matrix(matrix)
         # based on the tf_matrix and idf_vector, we calculate the tf_idf_matrix
         tf_idf_matrix = {}
-        doc_denominator_map = {}
-        for k, v in tf_matrix.items():
-            squared_sum = 0
-            for word in v:
-                value = v[word] * self.idf_vector[word]
-                # calculate squared sum for each document vector
-                squared_sum += math.pow(value, 2)
-                # put the tf-idf values (no normalization) into the tf-idf matrix
-                Utils.add_ele_to_matrix(tf_idf_matrix, k, word, value)
-            # take square root of squared sum
-            squared_sum = math.sqrt(squared_sum)
-            doc_denominator_map.update({k: squared_sum})
-        print("Normalize the TF-IDF Matrix values")
-        for doc_id, denom in doc_denominator_map.items():
-            for term, value in tf_idf_matrix[doc_id].items():
-                tf_idf_matrix[doc_id].update({term: value/denom})
+
+        if calc_matrix:
+            tf_matrix = TFIDF.create_tf_matrix(matrix)
+
+            doc_denominator_map = {}
+            for k, v in tf_matrix.items():
+                squared_sum = 0
+                for word in v:
+                    value = v[word] * self.idf_vector[word]
+                    # calculate squared sum for each document vector
+                    squared_sum += math.pow(value, 2)
+                    # put the tf-idf values (no normalization) into the tf-idf matrix
+                    Utils.add_ele_to_matrix(tf_idf_matrix, k, word, value)
+                # take square root of squared sum
+                squared_sum = math.sqrt(squared_sum)
+                doc_denominator_map.update({k: squared_sum})
+            print("Normalize the TF-IDF Matrix values")
+            for doc_id, denom in doc_denominator_map.items():
+                for term, value in tf_idf_matrix[doc_id].items():
+                    tf_idf_matrix[doc_id].update({term: value/denom})
         return tf_idf_matrix
 
     def create_query_vector(self, query):
@@ -130,22 +134,14 @@ class TFIDF:
         tokens = query.split()
         tokens_set = set(tokens)
         word_dict = dict.fromkeys(tokens_set, 0)
+        word_dict_temp = dict.fromkeys(tokens_set, 0)
         for word in tokens:
             word_dict[word] += 1
-        for k, v in word_dict.items():
+        for k, v in word_dict_temp.items():
             try:
-                word_dict[k] = self.idf_vector[k] * v
+                word_dict[k] = self.idf_vector[k] * word_dict[k]
             except KeyError:
                 # KeyError only when term is not in idf vector
                 # thus, ignore the term by removing from query
                 word_dict.pop(k)
         return word_dict
-
-    @staticmethod
-    def normalize_tf_idf(matrix):
-        """
-
-        :param matrix: tf-idf dict
-        :return: normalized tf-idf dict
-        """
-        pass

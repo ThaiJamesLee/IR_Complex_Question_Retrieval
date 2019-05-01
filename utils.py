@@ -16,10 +16,10 @@ class Utils:
         :param value: The value to the corresponding key (some numeric?)
         :return: Returns matrix with new element added.
         """
-        if doc not in matrix:
-            matrix.update({doc: {key: value}})
-        else:
+        try:
             matrix[doc].update({key: value})
+        except KeyError:
+            matrix.update({doc: {key: value}})
         return matrix
 
     @staticmethod
@@ -95,6 +95,18 @@ class Utils:
             value = {word: doc.count(word) for word in doc}
             doc_structure.update({docid: value})
         return doc_structure
+
+    @staticmethod
+    def get_value_from_key_in_dict(thedict, docid, key):
+        """
+        :param thedict: the dictionary, that should have numerics as values.
+        :param key: The key of interest
+        :return: Returns the numeric value if key exists, else 0.
+        """
+        try:
+            return thedict[key][docid]
+        except KeyError:
+            return 0
 
 
 class Helper:

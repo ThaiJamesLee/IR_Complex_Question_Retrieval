@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+__author__ = 'Duc Tai Ly'
+
 import pandas as pd
 import csv
 

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+__author__ = 'Duc Tai Ly'
 """
 this is used to test implementations
 and to show how to use the implemented code
@@ -31,7 +32,7 @@ stopword = set(stopwords.words("english"))
 ##################
 # Load test and processed data
 ##################
-print(len(pickle.load(open('cache/avg_emb_vec_glove_840B_300d.pkl', 'rb'))))
+# print(len(pickle.load(open('cache/avg_emb_vec_glove_840B_300d.pkl', 'rb'))))
 
 print('================== Load Data ===================')
 # contains list of query strings. querty terms are separated by whitespace
@@ -55,7 +56,7 @@ index = 0
 N = 100
 for idx, query in enumerate(raw_query):
     if index < N:
-        prep = Preprocess.preprocess([query[7:].replace("/", " ").replace("%20", " ")])
+        prep = Preprocess.preprocess('stem',[query[7:].replace("/", " ").replace("%20", " ")])
         query_map.update({query: prep[0]})
         index += 1
     else:
