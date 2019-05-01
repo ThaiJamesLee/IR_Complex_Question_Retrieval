@@ -37,12 +37,15 @@ class RocchioOptimizeQuery:
     def get_doc_weights(self, docs):
         doc_weights = {}
         for doc_id in docs:
-            doc = self.matrix[doc_id]
-            for term in list(doc.keys()):
-                if term in doc_weights:
-                    doc_weights[term] = doc_weights[term] + doc[term]
-                else:
-                    doc_weights[term] = doc[term]
+            try:
+                doc = self.matrix[doc_id]
+                for term in list(doc.keys()):
+                    if term in doc_weights:
+                        doc_weights[term] = doc_weights[term] + doc[term]
+                    else:
+                        doc_weights[term] = doc[term]
+            except KeyError:
+                pass
         return doc_weights
 
     # number_new_terms : amount of terms wanted to be added into initial query

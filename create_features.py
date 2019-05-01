@@ -2,6 +2,8 @@
 __author__ = 'Duc Tai Ly'
 
 import pickle
+import pandas as pd
+import numpy as np
 
 from bm25 import BM25
 from tf_idf import TFIDF
@@ -10,6 +12,7 @@ from query_expansion.rocchio import RocchioOptimizeQuery
 from performance import Performance
 from similarity import Similarity
 from cache_query_and_docs_as_embedding_vectors import Caching
+from utils import Utils
 
 
 class FeatureGenerator:
@@ -39,7 +42,9 @@ class FeatureGenerator:
         self.bm25_scores_file = 'cache/bm25_scores.pkl'
         self.similarity_tf_idf_scores_file = 'cache/cosine_tf_idf.pkl'
         self.similarity_if_idf_scores_query_exp_file = 'cache/cosine_tf_idf_qe.pkl'
-        self.similarity_semantic_word_embedding_scores_file = 'cache/cosine_sem_word_embeddings.pkl'
+        self.similarity_semantic_word_embedding_scores_file = 'cache/cosine_sem_we.pkl'
+        self.similarity_query_expansion_file = 'cache/cosine_query_expansion.pkl'
+        self.features_dataframe_file = 'cache/features_dataframe.pkl'
 
         self.caching = Caching(process_type='lemma')
 
@@ -96,7 +101,7 @@ class FeatureGenerator:
         p = Performance()
         bm25_relevance_scores = pickle.load(open(self.bm25_scores_file, 'rb'))
         tf_idf = self.tf_idf
-
+        print(tf_idf.term_doc_matrix)
         similarity_scores_tf_idf = {}
         query_expansion_cache = {}
         for q in self.caching.queries:
@@ -106,8 +111,8 @@ class FeatureGenerator:
 
             relevant_docs = p.filter_relevance_by_top_k(bm25_relevance_scores[q], top_k)
             non_relevant_docs = p.filter_pred_negative(bm25_relevance_scores[q])
-            new_query = rocchio.execute_rocchio(relevant_docs, non_relevant_docs)
-
+            new_query = rocchio.execute_rocchio(relevant_docs, non_relevant_docs, 5)
+            print(q, new_query)
             query_expansion_cache.update({q: new_query})
 
             similarities = {}
@@ -161,9 +166,14 @@ class FeatureGenerator:
         self.caching.create_document_embeddings()
         print('saved.')
 
-    def generate_features(self):
+    def generate_features_scores_and_cache(self):
+        """
+        Calculate all different scores (relevance with bm25, cosine similarity
+        (tf-idf, tf-idf with query expansion, semantic word embedding)
+        You can also just call the functions you need. Only use this, if you have none of the scores in cache.
+        """
         print('================== Calculate BM25 scores  ===================')
-        # self.calculate_bm25()
+        self.calculate_bm25()
 
         print('================== Cosine Similarity scores  ===================')
         self.calculate_cosine_tf_idf()
@@ -174,31 +184,83 @@ class FeatureGenerator:
         print('================== Cosine Similarity scores with semantic word embeddings  ===================')
         self.calculate_cosine_semantic_embeddings()
 
-        print('================== Create DataFrame with Features  ===================')
+    def generate_feature_dataframe_1(self):
+        """
+
+        :return:
+        """
+        print('Load scores...')
+        bm25_scores = pickle.load(open(self.bm25_scores_file, 'rb'))
+        tfidf_word_embedding_scores = pickle.load(open(self.similarity_semantic_word_embedding_scores_file, 'rb'))
+        tfidf_scores = pickle.load(open(self.similarity_tf_idf_scores_file, 'rb'))
+        query_expansion_scores = pickle.load(open(self.similarity_query_expansion_file, 'rb'))
+
+        queries = self.caching.queries
+        # cols = ['q', 'docid', 'bm25', 'tfidf', 'wordembedding', 'queryexpansion']
+        docids = self.caching.doc_structure.keys()
+        df = pd.DataFrame()
+        print('Generate Dataframe...')
+
+        for qe in queries:
+            for docid in docids:
+                df.append({'q': qe,
+                           'docid': docid,
+                           'bm25': Utils.get_value_from_key_in_dict(bm25_scores, qe),
+                           'tfidf': Utils.get_value_from_key_in_dict(tfidf_scores, qe),
+                          'wordembedding': Utils.get_value_from_key_in_dict(tfidf_word_embedding_scores, qe),
+                           'queryexpansion': Utils.get_value_from_key_in_dict(query_expansion_scores, qe)})
+
+        print('Save Feature Dataframe...')
+        pickle.dump(df, open(self.features_dataframe_file, 'wb'))
+        print('Saved in ', self.features_dataframe_file)
+
+        return df
+
+    def generate_feature_dataframe_2(self):
+        print('Load scores...')
+        bm25_scores = pickle.load(open(self.bm25_scores_file, 'rb'))
+        tfidf_word_embedding_scores = pickle.load(open(self.similarity_semantic_word_embedding_scores_file, 'rb'))
+        tfidf_scores = pickle.load(open(self.similarity_tf_idf_scores_file, 'rb'))
+        query_expansion_scores = pickle.load(open(self.similarity_query_expansion_file, 'rb'))
+
+        queries = self.caching.queries
+        docids = self.caching.doc_structure.keys()
+
+        scores = []
+        query_index = 0
+
+        qid = []
+
+        for qe in queries:
+            for docid in docids:
+                scores.append([Utils.get_value_from_key_in_dict(bm25_scores, docid, qe),
+                               Utils.get_value_from_key_in_dict(tfidf_scores, docid, qe),
+                               Utils.get_value_from_key_in_dict(tfidf_word_embedding_scores, docid, qe),
+                               Utils.get_value_from_key_in_dict(query_expansion_scores, docid, qe)])
+                qid.append(query_index)
+            query_index += 1
+
+        scores = np.array(scores)
+        qid = np.array(qid)
+
+        print(scores)
+        print(qid)
+
+        print('Save Feature Dataframe...')
+        pickle.dump(scores, open(self.features_dataframe_file, 'wb'))
+        pickle.dump(qid, open('cache/query_index.pkl', 'wb'))
+        print('Saved in ', self.features_dataframe_file)
 
 
 print('================== Load Data ===================')
 feature_generator = FeatureGenerator()
+feature_generator.generate_feature_dataframe_2()
 
-feature_generator.create_cache()
+# feature_generator.create_cache()
+# feature_generator.calculate_cosine_semantic_embeddings()
 
-feature_generator.generate_features()
-
-# queries = pickle.load(open('processed_data/lemma_processed_query.pkl', 'rb'))
-# print(queries)
-
-bm25 = pickle.load(open('cache/bm25_scores.pkl', 'rb'))
+# feature_generator.generate_features_scores_and_cache()
 
 
-tfidfem = pickle.load(open('cache/cosine_sem_we.pkl', 'rb'))
 
-
-tfidf = pickle.load(open('cache/cosine_tf_idf.pkl', 'rb'))
-
-query_expansion = pickle.load(open('cache/cosine_query_expansion.pkl', 'rb'))
-
-print(bm25['activity theory'])
-print(tfidf['activity theory'])
-print(tfidfem['activity theory'])
-print(query_expansion['activity theory'])
 

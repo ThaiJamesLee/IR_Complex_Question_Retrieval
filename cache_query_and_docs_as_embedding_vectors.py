@@ -6,6 +6,7 @@ import numpy as np
 
 from preprocessing import Preprocess
 from utils import Utils
+from tf_idf import TFIDF
 
 
 class Caching:
@@ -81,20 +82,27 @@ class Caching:
         :return:  Returns a dict of {processed query: embedding vector, ...}
         """
         query_embedding_vector = {}
+        tf_idf = TFIDF(self.doc_structure)
+
         for q in self.queries:
             sum_embedding_vectors = np.zeros(self.vector_dimension)  # create initial empty array
-            number_terms = len(self.queries)  # length of query
             terms = q.split()
+
+            query_vector = tf_idf.create_query_vector(q)
+
+            sum_weight = 0
 
             for term in terms:
                 try:
-                    sum_embedding_vectors = np.add(sum_embedding_vectors, self.cached_embeddings[term])
+                    weight = query_vector[term]
+                    sum_weight += weight
+                    we = np.multiply(weight, self.cached_embeddings[term])
+                    sum_embedding_vectors = np.add(sum_embedding_vectors, we)
                 except KeyError:
-                    # print('passed', term)
                     pass
 
             for idx in range(self.vector_dimension):
-                sum_embedding_vectors[idx] = sum_embedding_vectors[idx] / number_terms
+                sum_embedding_vectors[idx] = sum_embedding_vectors[idx] / sum_weight
 
             query_embedding_vector.update({q: sum_embedding_vectors})
         # avg_query_embeddings.pkl contains {processed_query: nparray, ...}
@@ -105,30 +113,27 @@ class Caching:
         create cache for document average word embedding vector
         :return: Returns a dict of {doc ids: embedding vectors, ...}
         """
+        tf_idf = TFIDF(self.doc_structure)
+        matrix = tf_idf.term_doc_matrix
+
         doc_embedding_vectors = {}
-        for docid, terms in self.doc_structure.items():
+        sum_weight = 0
+        for docid, terms in matrix.items():
             sum_embedding_vectors = np.zeros(self.vector_dimension)
             number_terms = len(terms.keys())
+            doc_weights = matrix[docid]
             if number_terms > 0:
                 for term in terms.keys():
                     try:
-                        sum_embedding_vectors = np.add(sum_embedding_vectors, self.cached_embeddings[term])
+                        weight = doc_weights[term]
+                        we = np.multiply(weight, self.cached_embeddings[term])
+                        sum_embedding_vectors = np.add(sum_embedding_vectors, we)
+                        sum_weight += weight
                     except KeyError:
                         # print('passed', term)
                         pass
-                sum_embedding_vectors /= number_terms
+                sum_embedding_vectors /= sum_weight
 
             doc_embedding_vectors.update({docid: sum_embedding_vectors})
         # avg_doc_embeddings.pkl contains {docid: nparray, ...}
         pickle.dump(doc_embedding_vectors, open(self.avg_doc_embeddings, 'wb'))
-
-
-
-
-
-
-
-
-
-
-

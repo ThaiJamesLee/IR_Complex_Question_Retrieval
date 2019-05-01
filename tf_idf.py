@@ -101,7 +101,6 @@ class TFIDF:
         matrix = self.documents
         # create the idf vector and the tf matrices
         self.idf_vector = self.create_idf_matrix(matrix)
-
         # based on the tf_matrix and idf_vector, we calculate the tf_idf_matrix
         tf_idf_matrix = {}
 
