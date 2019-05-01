@@ -29,7 +29,7 @@ bm25 = pickle.load(open("processed_data/sample_input_bm25.pkl", 'rb'))
 tf_idf = pickle.load(open("processed_data/sample_input_tfidf.pkl", 'rb'))
 
 raw_query = 'asm'
-query_vector = {'asm': 0.5}
+query_vector = {'asm': 0.5, 'engin': 0.2}
 
 p = Performance()
 rocchio = RocchioOptimizeQuery(query_vector=query_vector, tf_idf_matrix=tf_idf)
@@ -37,9 +37,9 @@ rocchio = RocchioOptimizeQuery(query_vector=query_vector, tf_idf_matrix=tf_idf)
 relevant_docs = p.filter_relevance_by_top_k(bm25['asm'],10)
 non_relevant_docs = p.filter_pred_negative(bm25['asm'])
 
-new_query_vector = rocchio.execute_rocchio(relevant_docs, non_relevant_docs)
+new_query_vector = rocchio.execute_rocchio(relevant_docs, non_relevant_docs, number_new_terms=3)
 expanded_new_terms = rocchio.get_topk_new_terms(5)
 print('initial query : ', query_vector)
-# print('expanded query : ', new_query_vector)
+print('expanded query : ', new_query_vector)
 print('new terms : ', expanded_new_terms)
 
