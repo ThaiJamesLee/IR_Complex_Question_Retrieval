@@ -27,12 +27,12 @@ class Caching:
         """
         self.process_type = process_type
         if process_type == 'lemma':
-            self.corpus = pickle.load(open('process_data/lemma_process_paragraph.pkl', 'rb'))
-            self.queries = pickle.load(open('process_data/lemma_process_query.pkl', 'rb'))
+            self.corpus = pickle.load(open('process_data/lemma_processed_paragraph.pkl', 'rb'))
+            self.queries = pickle.load(open('process_data/lemma_processed_query.pkl', 'rb'))
             self.tf_idf_cache = 'cache/lemma_tf_idf.pkl'
         elif process_type == 'stem':
-            self.corpus = pickle.load(open('process_data/process_paragraph.pkl', 'rb'))
-            self.queries = pickle.load(open('process_data/process_query.pkl', 'rb'))
+            self.corpus = pickle.load(open('process_data/processed_paragraph.pkl', 'rb'))
+            self.queries = pickle.load(open('process_data/processed_query.pkl', 'rb'))
             self.tf_idf_cache = 'cache/tf_idf.pkl'
 
         self.cached_embeddings = pickle.load(open('cache/word_embedding_vectors.pkl', 'rb'))

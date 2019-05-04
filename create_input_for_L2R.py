@@ -1,15 +1,12 @@
 import numpy as np
 import pandas as pd
 import pickle
-from tf_idf import TFIDF
 from utils import Utils
-from cache_query_and_docs_as_embedding_vectors import Caching
 
 
 class createInputForL2R:
     """
-    Prepare the input for L2R
-
+    Prepare the input for L2R (RankLib format)
 
     """
 
@@ -40,6 +37,7 @@ class createInputForL2R:
             x[i, 3] = Utils.get_value_from_key_in_dict(cls.tfidf_rocchio_score, d, q)
             x[i, 4] = Utils.get_value_from_key_in_dict(cls.glove_rocchio_score, d, q)
         return x, y, qlist
+
     @staticmethod
     def input_for_package(df, filename):
         x, _, query = createInputForL2R.get_feature(df)
@@ -65,4 +63,4 @@ class createInputForL2R:
                       f"5:{input.iloc[i,6]} #docid = {input.iloc[i,7]} ", file=text_file)
 
 
-createInputForL2R('processed_data/process_train.pkl', 'processed_data/process_test.pkl')
+createInputForL2R('process_data/process_train.pkl', 'process_data/process_test.pkl')
