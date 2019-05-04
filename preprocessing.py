@@ -60,8 +60,8 @@ class Preprocess(object):
         self.train, self.test = self.create_train_test()
         self.process_train = Preprocess.process_query_in_test(self.train, self.raw_query, self.processed_query)
         self.process_test = Preprocess.process_query_in_test(self.test, self.raw_query, self.processed_query)
-        pickle.dump(self.process_train, open('processed_data/process_train.pkl', 'wb'))
-        pickle.dump(self.process_test, open('processed_data/process_test.pkl', 'wb'))
+        pickle.dump(self.process_train, open('process_data/process_train.pkl', 'wb'))
+        pickle.dump(self.process_test, open('process_data/process_test.pkl', 'wb'))
 
     @staticmethod
     def preprocess(process_type, docs):
@@ -82,7 +82,7 @@ class Preprocess(object):
                     [
                         stemmer.stem(i)
                         for i in regex.sub(' ', doc).split()
-                        if(i != " ") & (i not in stopword) & (not i.isdigit()) & (i not in new_punctuation)
+                        if (i != " ") & (i not in stopword) & (not i.isdigit()) & (i not in new_punctuation)
                     ]
                 ))
         elif process_type == 'lemma':
@@ -93,7 +93,7 @@ class Preprocess(object):
                     [
                         wordnet_lemmatizer.lemmatize(i).lower()
                         for i in regex.sub(' ', doc).split()
-                        if(i != " ") & (i not in stopword) & (not i.isdigit()) & (i not in new_punctuation)
+                        if (i != " ") & (i not in stopword) & (not i.isdigit()) & (i not in new_punctuation)
                     ]
                 ))
         print(f'finish preprocess...')
@@ -119,10 +119,10 @@ class Preprocess(object):
             paragraph_ids.append(para.para_id)
         print(f'number of paragraphs: {len(paragraph_ids)}')
 
-        pickle.dump(paragraphs, open("processed_data/paragraphs.pkl", "wb"))
-        pickle.dump(paragraph_ids, open("processed_data/paragraph_ids.pkl", "wb"))
+        pickle.dump(paragraphs, open("process_data/paragraphs.pkl", "wb"))
+        pickle.dump(paragraph_ids, open("process_data/paragraph_ids.pkl", "wb"))
         documents = cls.preprocess(process_type, paragraphs)
-        pickle.dump(documents, open(f"processed_data/{process_type}_processed_paragraph.pkl", "wb"))
+        pickle.dump(documents, open(f"process_data/{process_type}_processed_paragraph.pkl", "wb"))
         print('finish loading paragraph')
         return paragraphs, paragraph_ids, documents
 
@@ -149,9 +149,9 @@ class Preprocess(object):
             processed_query.append(query[7:].replace("/", " ").replace("%20", " "))
         processed_query = cls.preprocess(process_type, processed_query)
         print(f'finish loading query, num of query: {len(raw_query)}')
-        pickle.dump(y_true, open("processed_data/y_true.pkl", "wb"))
-        pickle.dump(raw_query, open("processed_data/raw_query.pkl", "wb"))
-        pickle.dump(processed_query, open(f"processed_data/{process_type}_processed_query.pkl", "wb"))
+        pickle.dump(y_true, open("process_data/y_true.pkl", "wb"))
+        pickle.dump(raw_query, open("process_data/raw_query.pkl", "wb"))
+        pickle.dump(processed_query, open(f"process_data/{process_type}_processed_query.pkl", "wb"))
         return y_true, raw_query, processed_query
 
     @classmethod
@@ -199,10 +199,10 @@ class Preprocess(object):
                     print('Nonetype')
             self.article_paragraph[page.page_id] = self.para_in_page
             self.article_section[page.page_id] = self.section_in_page
-        pickle.dump(self.article_paragraph, open("processed_data/article_paragraphs.pkl", "wb"))
-        pickle.dump(self.article_section, open("processed_data/article_sections.pkl", "wb"))
-        pickle.dump(self.section_paragraph, open("processed_data/section_paragraphs.pkl", "wb"))
-        pickle.dump(self.para_art_sec, open("processed_data/paragraph_article_section.pkl", "wb"))
+        pickle.dump(self.article_paragraph, open("process_data/article_paragraphs.pkl", "wb"))
+        pickle.dump(self.article_section, open("process_data/article_sections.pkl", "wb"))
+        pickle.dump(self.section_paragraph, open("process_data/section_paragraphs.pkl", "wb"))
+        pickle.dump(self.para_art_sec, open("process_data/paragraph_article_section.pkl", "wb"))
 
     @staticmethod
     def random_select_noise(this_item, all_item, index):
@@ -226,12 +226,14 @@ class Preprocess(object):
         test set : all true paragraphs, and same amount paragraphs from other article
 
         """
-        print(f"number of queries {len(self.raw_query)}")
+
         train = self.y_true[self.y_true['query'] == self.raw_query[0]]
         test = self.y_true[self.y_true['query'] == self.raw_query[0]]
         for idx, query in enumerate(self.raw_query):
-            print(f"no {idx+1} / {len(self.raw_query)}")
+            print(query)
+            print(f"no {idx + 1} / {len(self.raw_query)}")
             # add true
+            # print(f"raw true docs: {len(self.y_true[self.y_true['query'] == query])}")
             train = train.append(self.y_true[self.y_true['query'] == query])
             test = test.append(self.y_true[self.y_true['query'] == query])
             true_paragraphs = self.y_true[self.y_true['query'] == query]['docid']
@@ -243,12 +245,14 @@ class Preprocess(object):
                 if '/' not in self.para_art_sec[para]:
                     # print("it's article")
                     while len(noise_paragraph) < 10:
-                        other_article, other_paragraphs = Preprocess.random_select_noise(this_article, self.article_paragraph.keys(), self.article_paragraph)
-                        if len(other_paragraphs) < 10:
-                            noisy_sample = set(random.sample(other_paragraphs, len(other_paragraphs)))  # randomized
+                        other_article, other_paragraphs = Preprocess.random_select_noise(this_article,
+                                                                                         self.article_paragraph.keys(),
+                                                                                         self.article_paragraph)
+                        if len(other_paragraphs) > 10 - len(noise_paragraph):
+                            noisy_sample = set(random.sample(other_paragraphs, 10 - len(noise_paragraph)))  # randomized
                             noise_paragraph.extend(self.remove_intersect(true_paragraphs, noisy_sample))
                         else:
-                            noisy_sample = set(random.sample(other_paragraphs, 10))
+                            noisy_sample = set(random.sample(other_paragraphs, len(other_paragraphs)))
                             noise_paragraph.extend(self.remove_intersect(true_paragraphs, noisy_sample))
                 else:
                     # print("it's section")
@@ -257,7 +261,8 @@ class Preprocess(object):
                     sections = self.article_sections.get(this_article)  # section under this article
                     # from other section
                     while len(noise_paragraph) < 5:
-                        other_section, other_section_paragraphs = Preprocess.random_select_noise(this_section, sections, self.section_paragraph)
+                        other_section, other_section_paragraphs = Preprocess.random_select_noise(this_section, sections,
+                                                                                                 self.section_paragraph)
                         if len(other_section_paragraphs) > 5 - len(noise_paragraph):
                             noisy_sample = set(random.sample(other_section_paragraphs, 5 - len(noise_paragraph)))
                         else:
@@ -265,34 +270,43 @@ class Preprocess(object):
                         noise_paragraph.extend(self.remove_intersect(true_paragraphs, noisy_sample))
                     # from other article
                     while len(noise_paragraph) < 10:
-                        other_article, other_paragraphs = Preprocess.random_select_noise(this_article, self.article_paragraph.keys(), self.article_paragraph)
+                        other_article, other_paragraphs = Preprocess.random_select_noise(this_article,
+                                                                                         self.article_paragraph.keys(),
+                                                                                         self.article_paragraph)
                         if len(other_paragraphs) > 10 - len(noise_paragraph):
                             noisy_sample = set(random.sample(other_paragraphs, 10 - len(noise_paragraph)))
                         else:
                             noisy_sample = set(random.sample(other_paragraphs, len(other_paragraphs)))
                         noise_paragraph.extend(self.remove_intersect(true_paragraphs, noisy_sample))
+
+                # print(f'len noise: {len(noise_paragraph)}')
                 train = train.append(pd.DataFrame([[query, 0, i, 0] for i in noise_paragraph], columns=train.columns))
 
                 # test set
-                same_article_paragraphs = self.remove_intersect(true_paragraphs, list(set(self.article_paragraph.get(this_article))))
+                same_article_paragraphs = self.remove_intersect(true_paragraphs,
+                                                                list(set(self.article_paragraph.get(this_article))))
                 if len(same_article_paragraphs) > 0:
                     other_article_paragraphs = []
                     while len(other_article_paragraphs) < len(same_article_paragraphs):
-                        other_article, other_paragraphs = Preprocess.random_select_noise(this_article, self.article_paragraph.keys(), self.article_paragraph)
+                        other_article, other_paragraphs = Preprocess.random_select_noise(this_article,
+                                                                                         self.article_paragraph.keys(),
+                                                                                         self.article_paragraph)
                         if len(other_paragraphs) > len(same_article_paragraphs) - len(other_article_paragraphs):
-                            noisy_sample = set(random.sample(other_paragraphs, len(same_article_paragraphs)-len(other_article_paragraphs)))
+                            noisy_sample = set(random.sample(other_paragraphs, len(same_article_paragraphs) - len(
+                                other_article_paragraphs)))
                         else:
                             noisy_sample = set(random.sample(other_paragraphs, len(other_paragraphs)))
                         other_article_paragraphs.extend(self.remove_intersect(true_paragraphs, noisy_sample))
                     same_article_paragraphs.extend(other_article_paragraphs)
-                    test = test.append(pd.DataFrame([[query, 0, i, 0] for i in same_article_paragraphs], columns=test.columns))
+                    test = test.append(
+                        pd.DataFrame([[query, 0, i, 0] for i in same_article_paragraphs], columns=test.columns))
 
         train.drop_duplicates(inplace=True)
         test.drop_duplicates(inplace=True)
         test.sort_values(by="query", inplace=True)
         train.sort_values(by="query", inplace=True)
-        pickle.dump(train, open('processed_data/simulated_train.pkl', 'wb'))
-        pickle.dump(test, open('processed_data/simulated_test.pkl', 'wb'))
+        pickle.dump(train, open('process_data/simulated_train.pkl', 'wb'))
+        pickle.dump(test, open('process_data/simulated_test.pkl', 'wb'))
         return train, test
 
     @staticmethod
@@ -303,3 +317,10 @@ class Preprocess(object):
             value = processed_query[list(raw_query).index(q)]
             process_df.loc[df['query'] == q, 'query'] = value
         return process_df
+
+
+obj = Preprocess('lemma', 'test200-train/train.pages.cbor-paragraphs.cbor',
+                 "test200-train//train.pages.cbor",
+                 "test200-train/train.pages.cbor-toplevel.qrels",
+                 "test200-train/train.pages.cbor-hierarchical.qrels",
+                 "test200-train/train.pages.cbor-article.qrels")
