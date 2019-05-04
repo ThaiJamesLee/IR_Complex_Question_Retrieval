@@ -34,6 +34,7 @@ class Utils:
             terms = para.split()
             words_set = set(terms)
             vocabulary = vocabulary.union(words_set)
+            print(len(vocabulary))
         return vocabulary
 
     @staticmethod

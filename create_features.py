@@ -42,6 +42,8 @@ class FeatureGenerator:
         self.similarity_semantic_word_embedding_scores_file = 'cache/cosine_sem_we.pkl'
         self.similarity_query_expansion_file = 'cache/cosine_query_expansion.pkl'
         self.features_dataframe_file = 'cache/features_dataframe.pkl'
+        self.cosine_glove = 'cache/cosine_sem_we.pkl'
+        self.cosine_glove_we = 'cache/cosine_sem_we_query_exp.pkl'
 
         self.caching = Caching(process_type='lemma')
 
@@ -278,6 +280,7 @@ class FeatureGenerator:
 print('================== Load Data ===================')
 feature_generator = FeatureGenerator()
 feature_generator.calculate_cosine_semantic_embeddings_query_expansion()
+feature_generator.calculate_cosine_semantic_embeddings()
 
 # feature_generator.create_cache()
 # feature_generator.calculate_cosine_semantic_embeddings()

@@ -56,12 +56,4 @@ class Similarity:
         if len(vec1) != len(vec2):
             raise Exception('The two vectors must be of the same size!')
         else:
-            counter = 0
-            # denominator_1 = 0
-            # denominator_2 = 0
-            # for index, value in enumerate(vec1):
-            #     # denominator_1 += math.pow(value, 2)
-            #     # denominator_2 += math.pow(vec2[index], 2)
-            #     counter += value * vec2[index]
-            # return counter
             return vec1.dot(vec2)

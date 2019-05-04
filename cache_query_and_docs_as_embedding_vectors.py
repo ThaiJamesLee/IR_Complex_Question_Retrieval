@@ -111,7 +111,7 @@ class Caching:
         # avg_query_embeddings.pkl contains {processed_query: nparray, ...}
         pickle.dump(query_embedding_vector, open(self.avg_query_embeddings, 'wb'))
 
-    def create_query_embeddings_query_expansion(self, top_k=10):
+    def create_query_embeddings_query_expansion(self, top_k=10, rocchio_terms=5):
         """
         Prerequisites: requires cached bm25 scores in cache.
         You have to create the bm25_scores.pkl first!
@@ -130,9 +130,15 @@ class Caching:
             sum_embedding_vectors = np.zeros(self.vector_dimension)  # create initial empty array
             tfidf_q = tf_idf.create_query_vector(q)
             rocchio = RocchioOptimizeQuery(query_vector=tfidf_q, tf_idf_matrix=tf_idf.term_doc_matrix)
-            relevant_docs = p.filter_relevance_by_top_k(bm25_scores[q], top_k)
-            non_relevant_docs = p.filter_pred_negative(bm25_scores[q])
-            new_query = rocchio.execute_rocchio(relevant_docs, non_relevant_docs, 5)
+            scores = {}
+            try:
+                scores = bm25_scores[q]
+            except KeyError:
+                pass
+
+            relevant_docs = p.filter_relevance_by_top_k(scores, top_k)
+            non_relevant_docs = p.filter_pred_negative(scores)
+            new_query = rocchio.execute_rocchio(relevant_docs, non_relevant_docs, rocchio_terms)
 
             sum_weight = 0
 
@@ -162,22 +168,23 @@ class Caching:
         matrix = tf_idf.term_doc_matrix
 
         doc_embedding_vectors = {}
-        sum_weight = 0
         for docid, terms in matrix.items():
+            sum_weight = 0
             sum_embedding_vectors = np.zeros(self.vector_dimension)
             number_terms = len(terms.keys())
-            doc_weights = matrix[docid]
             if number_terms > 0:
                 for term in terms.keys():
                     try:
-                        weight = doc_weights[term]
+                        weight = terms[term]
                         we = np.multiply(weight, self.cached_embeddings[term])
                         sum_embedding_vectors = np.add(sum_embedding_vectors, we)
                         sum_weight += weight
                     except KeyError:
-                        # print('passed', term)
                         pass
-                sum_embedding_vectors /= sum_weight
+                if sum_weight > 0:
+                    sum_embedding_vectors /= sum_weight
+                else:
+                    sum_embedding_vectors = np.zeros(self.vector_dimension)
 
             doc_embedding_vectors.update({docid: sum_embedding_vectors})
         # avg_doc_embeddings.pkl contains {docid: nparray, ...}
