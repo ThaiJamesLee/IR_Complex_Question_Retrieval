@@ -8,10 +8,10 @@ from utils import Utils
 print('Load data...')
 
 # processed queries
-queries = pickle.load(open('processed_data/lemma_processed_query.pkl', 'rb'))
+queries = pickle.load(open('process_data/lemma_processed_query.pkl', 'rb'))
 
 # true labels
-true_labels = pickle.load(open('processed_data/process_test.pkl', 'rb'))
+true_labels = pickle.load(open('process_data/process_test.pkl', 'rb'))
 
 # bm25 scores
 bm25_scores = pickle.load(open('cache/bm25_scores.pkl', 'rb'))
