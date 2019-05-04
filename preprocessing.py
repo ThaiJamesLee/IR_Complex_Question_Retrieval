@@ -318,9 +318,10 @@ class Preprocess(object):
             process_df.loc[df['query'] == q, 'query'] = value
         return process_df
 
-
+"""
 obj = Preprocess('lemma', 'test200-train/train.pages.cbor-paragraphs.cbor',
                  "test200-train//train.pages.cbor",
                  "test200-train/train.pages.cbor-toplevel.qrels",
                  "test200-train/train.pages.cbor-hierarchical.qrels",
                  "test200-train/train.pages.cbor-article.qrels")
+"""
