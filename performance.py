@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Duc Tai Ly'
 
+import numpy as np
+
+from utils import Utils
 
 class Performance:
     """
@@ -151,16 +154,6 @@ class AveragePrecision:
             except ValueError:
                 pass
 
-        """for index, docs in enumerate(actual_doc_ids):
-            try:
-                actual_score = actual_relevance[index]
-                print(docs, total_retrieved[docs])
-                if total_retrieved[docs] > 0 and actual_score > 0:
-                    count += 1
-                    precision_arr.append(count / (index + 1))
-            except KeyError:
-                pass"""
-
         ap_score = 0
         if len(precision_arr) > 0:
             for prec in precision_arr:
@@ -168,44 +161,105 @@ class AveragePrecision:
             ap_score = ap_score/len(precision_arr)
         return ap_score
 
-    @staticmethod
-    def avg_recall_score(predicted, actual):
-        """
-
-        :param predicted: predicted: dict of predicted {docid: score, ...}
-        :param actual: actual: dataframe of actual to corresponding query
-        :return: avg recall score corresponding to predicted and actual labels
-        """
-        # contains only documents with < 0 relevance
-        total_retrieved = Performance.filter_relevance_by_threshold(predicted)
-
-        actual_doc_ids = list(actual['docid'])
-        actual_relevance = list(actual['rel'])
-        # number of relevant documents
-        # total_pred_negative = Performance.filter_pred_negative(predicted)
-        # false_negative = Performance.get_false_negatives(total_pred_negative, actual_doc_ids, actual_relevance)
-        no_relevant_doc = 0
-        for rel in actual_relevance:
-            no_relevant_doc += rel
-
-        count = 0
-        recall_arr = []
-        for index, docs in enumerate(sorted(total_retrieved, key=total_retrieved.get, reverse=True)):
-            try:
-                if actual_relevance[actual_doc_ids.index(docs)] == 1:
-                    count += 1
-                    recall_arr.append(count / no_relevant_doc)
-            except ValueError:
-                pass
-
-        ar_score = 0
-        if len(recall_arr) > 0:
-            for rec in recall_arr:
-                ar_score += rec
-            ar_score = ar_score/len(recall_arr)
-        return ar_score
-
     # precision and recall values as input
     @staticmethod
     def f1_score(pre, rec):
         return 2*(pre * rec) / (pre + rec)
+
+    def calculate_map(self, name, queries, true_labels, predicted_scores, top_k, threshold=0):
+        """
+
+        :param name: scores to be evaluated (bm25, tf-idf, ...)
+        :param queries: all queries
+        :param true_labels: true labels of query and corresponding doc
+        :param predicted_scores: predicted relevances
+        :param top_k: limit to top relevant document
+        :param threshold: minimum score for doc to be considered relevant
+        :return: map score
+        """
+        print('Calculate MAP for:', name)
+        for q in queries:
+            y_true = Utils.get_doc_and_relevance_by_query(q, true_labels)
+            try:
+                y_pred = predicted_scores[q]
+                precision = AveragePrecision.avg_precision_score(y_pred, y_true, top_k=top_k, threshold=threshold)
+                # recall = AveragePrecision.avg_recall_score(y_pred, y_true)
+                self.add_precision_score(q, precision)
+                # a.add_recall_score(q, recall)
+            except KeyError:
+                pass
+        map_score = self.mean_avg_precision()
+        print(name, 'MAP ', map_score)
+        return map_score
+
+
+class ReciprocalRank:
+
+    def __init__(self):
+        self.ranks = []
+
+    @staticmethod
+    def rank(predicted, actual, threshold=0, top_k=-1):
+        """
+
+        :param predicted: dict of predicted scores {docid: score}
+        :param actual: df of true labels
+        :param threshold: filter threshold score
+        :param top_k: take best top_k relevant docs
+        :return: returns the reciprocal rank of the predicted query document
+        """
+        total_retrieved = Performance.filter_relevance_by_threshold(predicted, threshold=threshold)
+
+        # retrieves best top_k relevant documents
+        if top_k > 0:
+            total_retrieved = Performance.filter_relevance_by_top_k(predicted, top_k)
+
+        actual_doc_ids = list(actual['docid'])
+        actual_relevance = list(actual['rel'])
+
+        rank = 0
+
+        for index, docs in enumerate(sorted(total_retrieved, key=total_retrieved.get, reverse=True)):
+            try:
+                if actual_relevance[actual_doc_ids.index(docs)] == 1:
+                    rank = 1/(index + 1)
+                    break
+            except ValueError:
+                pass
+        return rank
+
+    def add_rank(self, rank):
+        self.ranks.append(rank)
+
+    def mean_reciprocal_rank(self):
+        num_queries = len(self.ranks)
+        return np.sum(self.ranks)/num_queries
+
+    def calculate_mrr(self, name, queries, true_labels, predicted_scores, top_k, threshold=0):
+        """
+
+        :param name: scores to be evaluated (bm25, tf-idf, ...)
+        :param queries: all queries
+        :param true_labels: true labels of query and corresponding doc
+        :param predicted_scores: predicted relevances
+        :param top_k: limit to top relevant document
+        :param threshold: minimum score for doc to be considered relevant
+        :return: mrr score
+        """
+        print('Calculate MRR for:', name)
+        for q in queries:
+            y_true = Utils.get_doc_and_relevance_by_query(q, true_labels)
+            try:
+                y_pred = predicted_scores[q]
+                reciprocal_rank = ReciprocalRank.rank(y_pred, y_true, top_k=top_k, threshold=threshold)
+                self.add_rank(reciprocal_rank)
+            except KeyError:
+                pass
+        mrr_score = self.mean_reciprocal_rank()
+        print(name, 'MRR ', mrr_score)
+        return mrr_score
+
+
+
+
+
