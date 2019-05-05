@@ -5,6 +5,7 @@ import numpy as np
 
 from utils import Utils
 
+
 class Performance:
     """
     This class contains some methods to calculate the performance.
@@ -80,7 +81,7 @@ class Performance:
         return filtered
 
     @staticmethod
-    def filter_relevance_by_top_k(scores, top_k=100):
+    def filter_relevance_by_top_k(scores, top_k=20):
         """
 
         :param scores: dict of key, value pairs
@@ -96,6 +97,21 @@ class Performance:
             else:
                 break
         return filtered
+
+    @staticmethod
+    def filter_ranked_list(scores, top_k, threshold):
+        """
+
+        :param scores:
+        :param top_k: use filter_relevance_by_top_k
+        :param threshold: use filter_relevance_by_threshold
+        :return: a dict filtered by top_k and threshold
+        """
+        total_retrieved = Performance.filter_relevance_by_threshold(scores, threshold=threshold)
+        if top_k > 0:
+            total_retrieved = Performance.filter_relevance_by_top_k(scores, top_k)
+
+        return total_retrieved
 
 
 class AveragePrecision:
@@ -131,12 +147,7 @@ class AveragePrecision:
         :return: avg precision score corresponding to predicted and actual labels
         """
         # contains only documents with < threshold relevance
-        total_retrieved = Performance.filter_relevance_by_threshold(predicted, threshold=threshold)
-
-        # retrieves best top_k relevant documents
-        if top_k > 0:
-            total_retrieved = Performance.filter_relevance_by_top_k(predicted, top_k)
-
+        total_retrieved = Performance.filter_ranked_list(predicted, top_k, threshold)
         # actual values of labeled set
         # arrays actual_doc_ids and actual_relevance are mapped by there indices
         # like this {actual_doc_ids[i]: actual_relevance[i], ...} for all i in range
@@ -177,7 +188,6 @@ class AveragePrecision:
         :param threshold: minimum score for doc to be considered relevant
         :return: map score
         """
-        print('Calculate MAP for:', name)
         for q in queries:
             y_true = Utils.get_doc_and_relevance_by_query(q, true_labels)
             try:
@@ -208,11 +218,7 @@ class ReciprocalRank:
         :param top_k: take best top_k relevant docs
         :return: returns the reciprocal rank of the predicted query document
         """
-        total_retrieved = Performance.filter_relevance_by_threshold(predicted, threshold=threshold)
-
-        # retrieves best top_k relevant documents
-        if top_k > 0:
-            total_retrieved = Performance.filter_relevance_by_top_k(predicted, top_k)
+        total_retrieved = Performance.filter_ranked_list(predicted, top_k, threshold)
 
         actual_doc_ids = list(actual['docid'])
         actual_relevance = list(actual['rel'])
@@ -220,6 +226,7 @@ class ReciprocalRank:
         rank = 0
 
         for index, docs in enumerate(sorted(total_retrieved, key=total_retrieved.get, reverse=True)):
+            # search for first document that is true positive and use its retrieved index for its reciprocal rank
             try:
                 if actual_relevance[actual_doc_ids.index(docs)] == 1:
                     rank = 1/(index + 1)
@@ -246,7 +253,6 @@ class ReciprocalRank:
         :param threshold: minimum score for doc to be considered relevant
         :return: mrr score
         """
-        print('Calculate MRR for:', name)
         for q in queries:
             y_true = Utils.get_doc_and_relevance_by_query(q, true_labels)
             try:
@@ -259,7 +265,52 @@ class ReciprocalRank:
         print(name, 'MRR ', mrr_score)
         return mrr_score
 
+from multiprocessing.dummy import Pool as ThreadPool
 
+
+class Precision:
+
+    def __init__(self):
+        self.scores = []
+
+    @staticmethod
+    def r_prec(predicted, actual, threshold=0, top_k=-1):
+        total_retrieved = Performance.filter_ranked_list(predicted, top_k, threshold)
+
+        actual_doc_ids = list(actual['docid'])
+        actual_relevance = list(actual['rel'])
+
+        r_prec = 0
+        counter = 0  # count actual relevant
+        for index, docs in enumerate(sorted(total_retrieved, key=total_retrieved.get, reverse=True)):
+            try:
+                if actual_relevance[actual_doc_ids.index(docs)] == 1:
+                    counter += 1
+            except ValueError:
+                pass
+        num_relevant = np.sum(actual_relevance)
+        if num_relevant > 0:
+            r_prec = counter/num_relevant
+
+        return r_prec
+
+    def mean_r_prec(self):
+        num_r_prec = len(self.scores)
+        return np.sum(self.scores)/num_r_prec
+
+    def calculate_r_prec(self, name, queries, true_labels, predicted_scores, top_k, threshold=0):
+
+        for q in queries:
+            y_true = Utils.get_doc_and_relevance_by_query(q, true_labels)
+            try:
+                y_pred = predicted_scores[q]
+                r_prec = Precision.r_prec(y_pred, y_true, threshold=threshold, top_k=top_k)
+                self.scores.append(r_prec)
+            except KeyError:
+                pass
+        r_prec_score = self.mean_r_prec()
+        print(name, 'R-Prec', r_prec_score)
+        return r_prec_score
 
 
 

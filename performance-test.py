@@ -4,6 +4,7 @@ from utils import Utils
 from performance import *
 from cache_embedding_vectors import Caching
 from utils import Utils
+from threading import Thread
 
 print('Load data...')
 
@@ -29,23 +30,38 @@ glove_scores = pickle.load(open('cache/cosine_sem_we.pkl', 'rb'))
 glove_rocchio_scores = pickle.load(open('cache/cosine_sem_we_query_exp.pkl', 'rb'))
 
 top_k = 20
-
 print('Set documents top_k to', top_k)
 
-print('Calculate MAP scores...')
-AveragePrecision().calculate_map('BM25', queries, true_labels, bm25_scores, top_k)
-AveragePrecision().calculate_map('TF-IDF', queries, true_labels, tfidf_scores, top_k)
-AveragePrecision().calculate_map('TF-IDF + Roccio', queries, true_labels, tfidf_rocchio_scores, top_k)
-AveragePrecision().calculate_map('GloVe', queries, true_labels, glove_scores, top_k)
-AveragePrecision().calculate_map('GloVe + Rocchio', queries, true_labels, glove_rocchio_scores, top_k)
+"""
+Run the metrics calculation with multiple threads.
+The order of the output is not guaranteed.
+"""
+batches = {'BM25': bm25_scores, 'TF-IDF': tfidf_scores, 'TF-IDF + Roccio': tfidf_rocchio_scores, 'GloVe': glove_scores, 'GloVe + Rocchio': glove_rocchio_scores}
 
-print('Calculate MRR scores...')
-ReciprocalRank().calculate_mrr('BM25', queries, true_labels, bm25_scores, top_k)
-ReciprocalRank().calculate_mrr('TF-IDF', queries, true_labels, tfidf_scores, top_k)
-ReciprocalRank().calculate_mrr('TF-IDF + Roccio', queries, true_labels, tfidf_rocchio_scores, top_k)
-ReciprocalRank().calculate_mrr('GloVe', queries, true_labels, glove_scores, top_k)
-ReciprocalRank().calculate_mrr('GloVe + Rocchio', queries, true_labels, glove_rocchio_scores, top_k)
 
+def calculate_metrics(name, scores, threshold=0.0):
+    map = AveragePrecision().calculate_map(name, queries, true_labels, scores, top_k, threshold=threshold)
+    mrr = ReciprocalRank().calculate_mrr(name, queries, true_labels, scores, top_k, threshold=threshold)
+    r_prec = Precision().calculate_r_prec(name, queries, true_labels, scores, top_k, threshold=threshold)
+    return map, mrr, r_prec
+
+
+if __name__ == '__main__':
+    try:
+        for k, v in batches.items():
+            Thread(target=calculate_metrics, args=(k, v)).start()
+    except:
+        print("Error: unable to start thread")
+
+"""
+Comment out the lines above for multithreading, if it is not desired.
+Comment in the code below for single threaded execution.
+"""
+
+"""
+for k, v in batches.items():
+    calculate_metrics(k, v)
+"""
 # print(true_labels)
 
 # c = Caching()
