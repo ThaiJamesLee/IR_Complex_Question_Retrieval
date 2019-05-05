@@ -18,7 +18,7 @@ from utils import Utils
 class FeatureGenerator:
     """
     Prerequisites:
-    if processed_data and cache directory do not exists or are empty
+    if process_data and cache directory do not exists or are empty
     - you run pre-process at least once
     - the cached word embeddings must exists. Thus, you need to run 'cache_word_embeddings.py'
     and 'cache_query_and_docs_as_embedding_vectors.py' first, if not already.
@@ -31,9 +31,9 @@ class FeatureGenerator:
 
         # set of predefined strings containing some file paths
         # change here the files to load
-        self.paragraph_corpus_file = 'processed_data/lemma_processed_paragraph.pkl'
-        self.paragraph_id_file = 'processed_data/paragraph_ids.pkl'
-        self.test_data_file = 'processed_data/simulated_test.pkl'
+        self.paragraph_corpus_file = 'process_data/lemma_process_paragraph.pkl'
+        self.paragraph_id_file = 'process_data/paragraph_ids.pkl'
+        self.test_data_file = 'process_data/simulated_test.pkl'
 
         # set here where to save the cached data
         self.bm25_scores_file = 'cache/bm25_scores.pkl'

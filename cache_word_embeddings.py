@@ -9,7 +9,7 @@ import numpy as np
 
 """
 Prerequisites:
-- you ran the preprocessing at least once to have the cached processed files in the processed_data directory
+- you ran the preprocessing at least once to have the cached processed files in the process_data directory
 - you need to put the glove pre-trained model file in this folder.
 - set the name of the 'glove_file' variable to the corresponding file
 - see here if you need the file: https://nlp.stanford.edu/projects/glove/
@@ -20,23 +20,15 @@ glove_file = 'glove.840B.300d.txt'
 print('Load Data...')
 
 # Load Data to create the count matrix
-paragraph_ids = pickle.load(open('processed_data/paragraph_ids.pkl', 'rb'))
-corpus = pickle.load(open('processed_data/lemma_processed_paragraph.pkl', 'rb'))
-test = pickle.load(open('processed_data/simulated_test.pkl', 'rb'))
+paragraph_ids = pickle.load(open('process_data/paragraph_ids.pkl', 'rb'))
+corpus = pickle.load(open('process_data/lemma_processed_paragraph.pkl', 'rb'))
+test = pickle.load(open('process_data/simulated_test.pkl', 'rb'))
 
 # Here load the pre-trained glove model
 # Not included in the git, since it is 5GB big.
 model = WordEmbedding(glove_file)
 
-print('Prepare Data Structures...')
-unique_doc = np.unique(list(test['docid']))
-c_corpus = [(id, corpus[paragraph_ids.index(id)].split()) for id in unique_doc]
-doc_structure = dict()
-
-# create the count matrix
-for (idx, doc) in c_corpus:
-    value = {word: doc.count(word) for word in doc}
-    doc_structure.update({idx: value})
+doc_structure = Utils.get_document_structure_from_data(test, corpus, paragraph_ids)
 
 print('Create Vocabulary...')
 # the vocabulary is a set of terms
