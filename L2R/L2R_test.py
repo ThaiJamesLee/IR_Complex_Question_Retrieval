@@ -32,8 +32,8 @@ exp_1_2 = 'java -jar RankLib-2.1-patched.jar ' \
         '-test MQ2008/Fold1/test.txt ' \
         '-validate MQ2008/Fold1/vali.txt ' \
         '-ranker 4 ' \
-        '-metric2t NDCG@10 ' \
-        '-metric2T ERR@10 ' \
+        '-metric2t MAP@10 ' \
+        '-metric2T MAP@10 ' \
         '-save CoordinateAscent_md.txt'
 
 # evaluate the pre-trained model stored in mymodel.txt on the specified test data
@@ -57,6 +57,14 @@ exp_4_3= 'java -jar RankLib-2.1-patched.jar -load CoordinateAscent_md.txt -test 
 # Save the result comparing into analysis.txt
 exp_4_4 = 'java -cp RankLib-2.1-patched.jar ciir.umass.edu.eval.Analyzer -all output/ -base baseline.ndcg.txt > analysis.txt'
 
+test_1 = 'java -jar RankLib-2.1-patched.jar ' \
+        '-train input_for_L2R/input_train.txt ' \
+        '-test input_for_L2R/input_test.txt ' \
+        '-ranker 4 ' \
+        '-metric2t MAP@10 ' \
+        '-metric2T MAP@10 ' \
+        '-save CoordinateAscent_md.txt'
 
+print('-----Start-----')
 # run experiments
-os.system(exp_4_4)
+os.system(test_1)
