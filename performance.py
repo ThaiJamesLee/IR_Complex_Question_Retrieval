@@ -113,18 +113,32 @@ class Performance:
 
         return total_retrieved
 
+    @staticmethod
+    def filter_docs_in_actual(actual_doc_ids, predicted):
+        """
+
+        :param actual_doc_ids: list of docids that are in the set of actual labels
+        :param predicted: dictionary with predicted relevance scores.
+        :return: dictionary only containing values with docids that are also in the test set with actual labels.
+        """
+        total_retrieved = {}
+
+        for index, docid in enumerate(actual_doc_ids):
+            try:
+                total_retrieved.update({docid: predicted[docid]})
+            except KeyError:
+                pass
+
+        return total_retrieved
+
 
 class AveragePrecision:
 
     def __init__(self):
         self.precision_scores = {}
-        self.recall_scores = {}
 
     def add_precision_score(self, q, precision):
         self.precision_scores.update({q: precision})
-
-    def add_recall_score(self, q, recall):
-        self.recall_scores.update({q: recall})
 
     def mean_avg_precision(self):
         map_score = 0.0
@@ -137,22 +151,30 @@ class AveragePrecision:
             return 0
 
     @staticmethod
-    def avg_precision_score(predicted, actual, threshold=0, top_k=-1):
+    def avg_precision_score(predicted, actual, threshold=0, top_k=-1, only_actual=True):
         """
 
         :param predicted: dict of predicted {docid: score, ...}
         :param actual: dataframe of actual to corresponding query
         :param threshold:
         :param top_k:
+        :param only_actual: true, then only use docs that are also in actual set,
+        else apply the filter with top_k and threshold.
         :return: avg precision score corresponding to predicted and actual labels
         """
         # contains only documents with < threshold relevance
-        total_retrieved = Performance.filter_ranked_list(predicted, top_k, threshold)
+        # total_retrieved = Performance.filter_ranked_list(predicted, top_k, threshold)
+
         # actual values of labeled set
         # arrays actual_doc_ids and actual_relevance are mapped by there indices
         # like this {actual_doc_ids[i]: actual_relevance[i], ...} for all i in range
         actual_doc_ids = list(actual['docid'])
         actual_relevance = list(actual['rel'])
+
+        if not only_actual:
+            total_retrieved = Performance.filter_ranked_list(predicted, top_k, threshold)
+        else:
+            total_retrieved = Performance.filter_docs_in_actual(actual_doc_ids, predicted)
 
         count = 0
         precision_arr = []
@@ -172,12 +194,7 @@ class AveragePrecision:
             ap_score = ap_score/len(precision_arr)
         return ap_score
 
-    # precision and recall values as input
-    @staticmethod
-    def f1_score(pre, rec):
-        return 2*(pre * rec) / (pre + rec)
-
-    def calculate_map(self, name, queries, true_labels, predicted_scores, top_k, threshold=0):
+    def calculate_map(self, name, queries, true_labels, predicted_scores, top_k, threshold=0, only_actual=True):
         """
 
         :param name: scores to be evaluated (bm25, tf-idf, ...)
@@ -192,7 +209,7 @@ class AveragePrecision:
             y_true = Utils.get_doc_and_relevance_by_query(q, true_labels)
             try:
                 y_pred = predicted_scores[q]
-                precision = AveragePrecision.avg_precision_score(y_pred, y_true, top_k=top_k, threshold=threshold)
+                precision = AveragePrecision.avg_precision_score(y_pred, y_true, top_k=top_k, threshold=threshold, only_actual=only_actual)
                 # recall = AveragePrecision.avg_recall_score(y_pred, y_true)
                 self.add_precision_score(q, precision)
                 # a.add_recall_score(q, recall)
@@ -204,24 +221,34 @@ class AveragePrecision:
 
 
 class ReciprocalRank:
+    """
+    Class to calculate the Reciprocal Rank.
+    """
 
     def __init__(self):
         self.ranks = []
 
     @staticmethod
-    def rank(predicted, actual, threshold=0, top_k=-1):
+    def rank(predicted, actual, threshold=0, top_k=-1, only_actual=True):
         """
 
         :param predicted: dict of predicted scores {docid: score}
         :param actual: df of true labels
         :param threshold: filter threshold score
         :param top_k: take best top_k relevant docs
+        :param only_actual: true, then only use docs that are also in actual set,
+        else apply the filter with top_k and threshold.
         :return: returns the reciprocal rank of the predicted query document
         """
-        total_retrieved = Performance.filter_ranked_list(predicted, top_k, threshold)
+
 
         actual_doc_ids = list(actual['docid'])
         actual_relevance = list(actual['rel'])
+
+        if not only_actual:
+            total_retrieved = Performance.filter_ranked_list(predicted, top_k, threshold)
+        else:
+            total_retrieved = Performance.filter_docs_in_actual(actual_doc_ids, predicted)
 
         rank = 0
 
@@ -242,7 +269,7 @@ class ReciprocalRank:
         num_queries = len(self.ranks)
         return np.sum(self.ranks)/num_queries
 
-    def calculate_mrr(self, name, queries, true_labels, predicted_scores, top_k, threshold=0):
+    def calculate_mrr(self, name, queries, true_labels, predicted_scores, top_k, threshold=0, only_actual=True):
         """
 
         :param name: scores to be evaluated (bm25, tf-idf, ...)
@@ -257,7 +284,7 @@ class ReciprocalRank:
             y_true = Utils.get_doc_and_relevance_by_query(q, true_labels)
             try:
                 y_pred = predicted_scores[q]
-                reciprocal_rank = ReciprocalRank.rank(y_pred, y_true, top_k=top_k, threshold=threshold)
+                reciprocal_rank = ReciprocalRank.rank(y_pred, y_true, top_k=top_k, threshold=threshold, only_actual=only_actual)
                 self.add_rank(reciprocal_rank)
             except KeyError:
                 pass
@@ -265,20 +292,33 @@ class ReciprocalRank:
         print(name, 'MRR ', mrr_score)
         return mrr_score
 
-from multiprocessing.dummy import Pool as ThreadPool
-
 
 class Precision:
+    """
+    Class to calculate R-Precision.
+    """
 
     def __init__(self):
         self.scores = []
 
     @staticmethod
-    def r_prec(predicted, actual, threshold=0, top_k=-1):
-        total_retrieved = Performance.filter_ranked_list(predicted, top_k, threshold)
+    def r_prec(predicted, actual, threshold=0, top_k=-1, only_actual=True):
+        """
 
+        :param predicted: predicted doc relevance
+        :param actual: actual relevance
+        :param threshold:
+        :param top_k:
+        :param only_actual: true, then only use docs that are also in actual set,
+        else apply the filter with top_k and threshold.
+        :return: R-Prec
+        """
         actual_doc_ids = list(actual['docid'])
         actual_relevance = list(actual['rel'])
+        if not only_actual:
+            total_retrieved = Performance.filter_ranked_list(predicted, top_k, threshold)
+        else:
+            total_retrieved = Performance.filter_docs_in_actual(actual_doc_ids, predicted)
 
         r_prec = 0
         counter = 0  # count actual relevant
@@ -298,13 +338,22 @@ class Precision:
         num_r_prec = len(self.scores)
         return np.sum(self.scores)/num_r_prec
 
-    def calculate_r_prec(self, name, queries, true_labels, predicted_scores, top_k, threshold=0):
+    def calculate_r_prec(self, name, queries, true_labels, predicted_scores, top_k, threshold=0, only_actual=True):
+        """
 
+        :param name: scores to be evaluated (bm25, tf-idf, ...)
+        :param queries: all queries
+        :param true_labels: true labels of query and corresponding doc
+        :param predicted_scores: predicted relevances
+        :param top_k: limit to top relevant document
+        :param threshold: minimum score for doc to be considered relevant
+        :return: r-prec score
+        """
         for q in queries:
             y_true = Utils.get_doc_and_relevance_by_query(q, true_labels)
             try:
                 y_pred = predicted_scores[q]
-                r_prec = Precision.r_prec(y_pred, y_true, threshold=threshold, top_k=top_k)
+                r_prec = Precision.r_prec(y_pred, y_true, threshold=threshold, top_k=top_k, only_actual=only_actual)
                 self.scores.append(r_prec)
             except KeyError:
                 pass
