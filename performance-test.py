@@ -29,7 +29,7 @@ glove_scores = pickle.load(open('cache/cosine_sem_we.pkl', 'rb'))
 # cosine similarity tfidf with glove word embedding + rocchio
 glove_rocchio_scores = pickle.load(open('cache/cosine_sem_we_query_exp.pkl', 'rb'))
 
-top_k = 20
+top_k = 10
 print('Set documents top_k to', top_k)
 
 """
