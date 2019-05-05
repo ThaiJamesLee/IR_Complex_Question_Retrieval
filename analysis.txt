@@ -1,0 +1,18 @@
+Reading output/baseline.ndcg.txt... 157 ranked lists [Done]
+Reading output/ca.ndcg.txt... 157 ranked lists [Done]
+Reading output/lm.ndcg.txt... 157 ranked lists [Done]
+
+
+Overall comparison
+------------------------------------------------------------------------
+System	Performance	Improvement	Win	Loss	p-value
+baseline.ndcg.txt [baseline]	0.3257
+ca.ndcg.txt	0.49	+0.1643 (+50.44%)	81	21	0.0
+lm.ndcg.txt	0.4891	+0.1633 (+50.15%)	79	25	0.0
+
+
+Detailed break down
+------------------------------------------------------------------------
+	[ < -100%)	[-100%, -75%)	[-75%, -50%)	[-50%, -25%)	[-25%, 0%)	(0%, +25%]	(+25%, +50%]	(+50%, +75%]	(+75%, +100%]	( > +100%]
+ca.ndcg.txt	0	0	0	5	16	30	32	14	5	0
+lm.ndcg.txt	0	0	0	6	19	24	35	15	5	0
