@@ -33,7 +33,7 @@ doc_structure = Utils.get_document_structure_from_data(test, corpus, paragraph_i
 print('Create Vocabulary...')
 # the vocabulary is a set of terms
 vocabulary = Utils.create_vocabulary_from_dict(doc_structure)
-print(vocabulary)
+print(len(vocabulary))
 
 term_embedding_vector = {}
 

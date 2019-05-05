@@ -11,7 +11,7 @@ from tf_idf import TFIDF
 from query_expansion.rocchio import RocchioOptimizeQuery
 from performance import Performance
 from similarity import Similarity
-from cache_query_and_docs_as_embedding_vectors import Caching
+from cache_embedding_vectors import Caching
 from utils import Utils
 
 
@@ -21,7 +21,7 @@ class FeatureGenerator:
     if process_data and cache directory do not exists or are empty
     - you run pre-process at least once
     - the cached word embeddings must exists. Thus, you need to run 'cache_word_embeddings.py'
-    and 'cache_query_and_docs_as_embedding_vectors.py' first, if not already.
+    and 'cache_embedding_vectors.py' first, if not already.
 
     The create_cache function might be necessary if cache folder is empty.
     Only the generate_feature function needs to be called if requirements are met.
@@ -42,6 +42,8 @@ class FeatureGenerator:
         self.similarity_semantic_word_embedding_scores_file = 'cache/cosine_sem_we.pkl'
         self.similarity_query_expansion_file = 'cache/cosine_query_expansion.pkl'
         self.features_dataframe_file = 'cache/features_dataframe.pkl'
+        self.cosine_glove = 'cache/cosine_sem_we.pkl'
+        self.cosine_glove_we = 'cache/cosine_sem_we_query_exp.pkl'
 
         self.caching = Caching(process_type='lemma')
 
@@ -210,7 +212,7 @@ class FeatureGenerator:
 
     def generate_feature_dataframe_1(self):
         """
-
+        @deprecated
         :return:
         """
         print('Load scores...')
@@ -241,6 +243,10 @@ class FeatureGenerator:
         return df
 
     def generate_feature_dataframe_2(self):
+        """
+        @deprecated
+        :return:
+        """
         print('Load scores...')
         bm25_scores = pickle.load(open(self.bm25_scores_file, 'rb'))
         tfidf_word_embedding_scores = pickle.load(open(self.similarity_semantic_word_embedding_scores_file, 'rb'))
@@ -278,6 +284,7 @@ class FeatureGenerator:
 print('================== Load Data ===================')
 feature_generator = FeatureGenerator()
 feature_generator.calculate_cosine_semantic_embeddings_query_expansion()
+feature_generator.calculate_cosine_semantic_embeddings()
 
 # feature_generator.create_cache()
 # feature_generator.calculate_cosine_semantic_embeddings()

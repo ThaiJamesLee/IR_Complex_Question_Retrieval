@@ -13,6 +13,7 @@ from bm25 import BM25
 from tf_idf import TFIDF
 from similarity import Similarity
 from performance import Performance
+from performance import AveragePrecision
 from nltk.stem.porter import PorterStemmer
 from nltk.corpus import stopwords
 import trec_car.read_data
@@ -53,7 +54,7 @@ raw_query = pickle.load(open('processed_data/raw_query.pkl', 'rb'))
 query_map = {}
 
 index = 0
-N = 100
+N = 50
 for idx, query in enumerate(raw_query):
     if index < N:
         prep = Preprocess.preprocess('stem',[query[7:].replace("/", " ").replace("%20", " ")])
@@ -150,7 +151,7 @@ print('================== Performance Test ===================')
 
 # k = unprocessed query
 # v = processed query
-p = Performance()
+p = AveragePrecision()
 for k, v in query_map.items():
     # get docids and relevance columns for given query as dataframe
     # this is y_true
@@ -159,9 +160,9 @@ for k, v in query_map.items():
     # rel_scores = {query : {docid: score}}
     y_pred = rel_scores[k]
     print(v)
-    precision = Performance.avg_precision_score(y_pred, y_true)
+    precision = AveragePrecision.avg_precision_score(y_pred, y_true)
     print('Avg. Precision Score', precision)
-    recall = Performance.avg_recall_score(y_pred, y_true)
+    recall = AveragePrecision.avg_recall_score(y_pred, y_true)
     print('Avg. Recall Score', recall)
     p.add_precision_score(v, precision)
     p.add_recall_score(v, recall)
