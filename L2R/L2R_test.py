@@ -65,6 +65,9 @@ test_1 = 'java -jar RankLib-2.1-patched.jar ' \
         '-metric2T MAP@10 ' \
         '-save CoordinateAscent_md.txt'
 
+save_re_ranking = 'java -jar RankLib-2.1-patched.jar ' \
+                  '-load CoordinateAscent_md.txt -rank input_for_L2R/input_test.txt -score re_ranking_result.txt'
+
 print('-----Start-----')
 # run experiments
-os.system(test_1)
+os.system(save_re_ranking)
