@@ -3,6 +3,9 @@ __author__ = 'Duc Tai Ly'
 
 import pickle
 import numpy as np
+import glob
+import os
+import os.path
 
 from preprocessing import Preprocess
 from utils import Utils
@@ -118,10 +121,15 @@ class Caching:
         See: create_features.py and run calculate_bm25 function to create it.
 
         create cache for query average word embedding vector
+
+        :param tf_idf: The TFIDF Object
+        :param top_k: top_k documents for rocchio to consider
+        :param rocchio_terms: number of terms rocchio should include
         :return:  Returns a dict of {processed query: embedding vector, ...}
         """
         p = Performance()
         query_embedding_vector = {}
+        print('Load BM25 scores...')
         bm25_scores = pickle.load(open('cache/bm25_scores.pkl', 'rb'))
 
         for q in self.queries:
@@ -185,3 +193,13 @@ class Caching:
             doc_embedding_vectors.update({docid: sum_embedding_vectors})
         # avg_doc_embeddings.pkl contains {docid: nparray, ...}
         pickle.dump(doc_embedding_vectors, open(self.avg_doc_embeddings, 'wb'))
+
+    @staticmethod
+    def clear_cache():
+        """
+        https://stackoverflow.com/questions/1995373/deleting-all-files-in-a-directory-with-python/1995397
+        :return:
+        """
+        filelist = glob.glob(os.path.join('cache', "*.pkl"))
+        for f in filelist:
+            os.remove(f)

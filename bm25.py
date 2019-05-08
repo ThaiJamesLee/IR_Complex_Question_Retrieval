@@ -125,9 +125,8 @@ class BM25:
         :param query: input as string separated by whitespaces
         :return: dict of {docid: relevance_score, ...}
         """
-        print('Calculate BM25 relevance: ', query)
         scores = {}
-        for doc_id, terms in self.documents.items():
+        for doc_id in self.documents.keys():
             score = self.relevance(doc_id, query)
             scores.update({doc_id: score})
         return scores

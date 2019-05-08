@@ -54,27 +54,35 @@ class FeatureGenerator:
             self.tf_idf = TFIDF(self.caching.doc_structure)
         else:
             self.tf_idf = tf_idf
+        self.num_queries = len(self.caching.queries)
 
     def calculate_bm25(self):
         """"
         Calculate the relevance scores with BM25, and cache them in a file.
         """
+        try:
+            open(self.bm25_scores_file, 'rb')
+            print('Scores already in cache.')
+        except FileNotFoundError:
+            bm25 = BM25(self.caching.doc_structure, k=1.2)
 
-        bm25 = BM25(self.caching.doc_structure, k=1.2)
+            # save the relevance scores as dict
+            rel_scores = {}
+            counter = 1
+            for q in self.caching.queries:
+                print(f'{q}: {counter} / {self.num_queries}')
+                counter += 1
 
-        # save the relevance scores as dict
-        rel_scores = {}
+                # contains dict of docid: relevance score
+                scores = bm25.compute_relevance_on_corpus(q)
+                # scores = Performance.filter_relevance_by_threshold(scores)
+                rel_scores.update({q: scores})
 
-        for q in self.caching.queries:
-            # contains dict of docid: relevance score
-            scores = bm25.compute_relevance_on_corpus(q)
-            # scores = Performance.filter_relevance_by_threshold(scores)
-            rel_scores.update({q: scores})
 
-        # dump in specified file
-        print('Save relevance scores...')
-        pickle.dump(rel_scores, open(self.bm25_scores_file, 'wb'))
-        print('Saved in', self.bm25_scores_file)
+            # dump in specified file
+            print('Save relevance scores...')
+            pickle.dump(rel_scores, open(self.bm25_scores_file, 'wb'))
+            print('Saved in', self.bm25_scores_file)
 
     def calculate_cosine_tf_idf(self):
         """
@@ -83,34 +91,52 @@ class FeatureGenerator:
         print('Calculate cosine for tf-idf...')
         # try to open cached file
         # if not exist, then
-        tf_idf = self.tf_idf
+        try:
+            open(self.similarity_tf_idf_scores_file, 'rb')
+            print('Scores already in cache.')
+        except FileNotFoundError:
+            tf_idf = self.tf_idf
 
-        similarity_scores_tf_idf = {}
-        for q in self.caching.queries:
-            query_vector = tf_idf.create_query_vector(q)
-            similarities = {}
-            for docid, terms in tf_idf.term_doc_matrix.items():
-                score = Similarity.cosine_similarity_normalized(query_vector, terms)
-                if score > 0:
-                    similarities.update({docid: score})
-            similarity_scores_tf_idf.update({q: similarities})
+            counter = 1
+            similarity_scores_tf_idf = {}
+            for q in self.caching.queries:
 
-        # dump in specified file
-        print('Save similarity scores...')
-        # contains {query: {docid: cosine, ...}, ...}
-        pickle.dump(similarity_scores_tf_idf, open(self.similarity_tf_idf_scores_file, 'wb'))
-        print('Saved in', self.similarity_tf_idf_scores_file)
+                print(f'{q}: {counter} / {self.num_queries}')
+                counter += 1
 
-    def calculate_cosine_tf_idf_query_expansion(self, top_k=10):
+                query_vector = tf_idf.create_query_vector(q)
+
+                similarities = {}
+
+                for docid, terms in tf_idf.term_doc_matrix.items():
+                    score = Similarity.cosine_similarity_normalized(query_vector, terms)
+                    if score > 0:
+                        similarities.update({docid: score})
+
+                similarity_scores_tf_idf.update({q: similarities})
+
+            # dump in specified file
+            print('Save similarity scores...')
+            # contains {query: {docid: cosine, ...}, ...}
+            pickle.dump(similarity_scores_tf_idf, open(self.similarity_tf_idf_scores_file, 'wb'))
+            print('Saved in', self.similarity_tf_idf_scores_file)
+
+    def calculate_cosine_tf_idf_rocchio(self, top_k=10):
         print('Calculate similarity with query expansion')
         p = Performance()
+
         bm25_relevance_scores = pickle.load(open(self.bm25_scores_file, 'rb'))
+
         tf_idf = self.tf_idf
-        print(tf_idf.term_doc_matrix)
+
         similarity_scores_tf_idf = {}
         query_expansion_cache = {}
+        counter = 1
         for q in self.caching.queries:
             query_vector = tf_idf.create_query_vector(q)
+
+            print(f'{q}: {counter} / {self.num_queries}')
+            counter += 1
 
             rocchio = RocchioOptimizeQuery(query_vector=query_vector, tf_idf_matrix=tf_idf.term_doc_matrix)
 
@@ -127,11 +153,11 @@ class FeatureGenerator:
             similarity_scores_tf_idf.update({q: similarities})
 
         print('Save similarities and expanded queries...')
-        pickle.dump(similarity_scores_tf_idf, open('cache/cosine_query_expansion.pkl', 'wb'))
+        pickle.dump(similarity_scores_tf_idf, open(self.similarity_query_expansion_file, 'wb'))
         pickle.dump(similarity_scores_tf_idf, open('cache/rocchio_expanded_queries.pkl', 'wb'))
         print('Saved.')
 
-    def calculate_cosine_semantic_embeddings(self):
+    def calculate_cosine_glove(self):
 
         # cosine for avg embedding vector
         print('Load cached embeddings...')
@@ -139,11 +165,17 @@ class FeatureGenerator:
         query_embeddings = pickle.load(open(self.caching.avg_query_embeddings, 'rb'))
         document_embeddings = pickle.load(open(self.caching.avg_doc_embeddings, 'rb'))
 
-        print('Calculate cosine for avg embedding vectors...')
+        num_queries = len(query_embeddings.keys())
 
+
+        print('Calculate cosine for avg embedding vectors...')
+        counter = 1
         similarity_scores_we = {}
         for query, vector in query_embeddings.items():
-            print('Calculate similarities for query vector = ', query)
+
+            print(f'{query}: {counter} / {num_queries}')
+            counter += 1
+
             similarities = {}
             for doc, doc_vec in document_embeddings.items():
                 score = Similarity.cosine_similarity_array(vector, doc_vec)
@@ -152,11 +184,11 @@ class FeatureGenerator:
             similarity_scores_we.update({query: similarities})
 
         # dump similarity scores in {query: {docid: score, ...}, ...}
-        print('Dump scores in ', 'cache/cosine_sem_we.pkl')
-        pickle.dump(similarity_scores_we, open('cache/cosine_sem_we.pkl', 'wb'))
+        print('Dump scores in ', self.cosine_glove)
+        pickle.dump(similarity_scores_we, open(self.cosine_glove, 'wb'))
         # print(similarity_scores_we)
 
-    def calculate_cosine_semantic_embeddings_query_expansion(self):
+    def calculate_cosine_glove_and_rocchio(self):
 
         # cosine for avg embedding vector
         print('Load cached embeddings...')
@@ -166,20 +198,27 @@ class FeatureGenerator:
 
         print('Calculate cosine for avg embedding vectors...')
 
+        counter = 0
         similarity_scores_we = {}
+
+        num_queries = len(query_embeddings.keys())
+
         for query, vector in query_embeddings.items():
-            print('Calculate similarities for query vector = ', query)
+
+            print(f'{query}: {counter} / {num_queries}')
+            counter += 1
+
             similarities = {}
             for doc, doc_vec in document_embeddings.items():
                 score = Similarity.cosine_similarity_array(vector, doc_vec)
                 if score > 0:
                     similarities.update({doc: score})
+
             similarity_scores_we.update({query: similarities})
 
         # dump similarity scores in {query: {docid: score, ...}, ...}
-        print('Dump scores in ', 'cache/cosine_sem_we.pkl')
-        pickle.dump(similarity_scores_we, open('cache/cosine_sem_we_query_exp.pkl', 'wb'))
-        # print(similarity_scores_we)
+        print('Dump scores in ', self.cosine_glove_we)
+        pickle.dump(similarity_scores_we, open(self.cosine_glove_we, 'wb'))
 
     def create_cache(self):
         """
@@ -208,13 +247,13 @@ class FeatureGenerator:
         self.calculate_cosine_tf_idf()
 
         print('================== Cosine Similarity scores with query expansion  ===================')
-        self.calculate_cosine_tf_idf_query_expansion()
+        self.calculate_cosine_tf_idf_rocchio()
 
         print('================== Cosine Similarity scores with semantic word embeddings  ==========')
-        self.calculate_cosine_semantic_embeddings()
+        self.calculate_cosine_glove()
 
         print('================== Cosine semantic word embedding with query expansion ==============')
-        self.calculate_cosine_semantic_embeddings_query_expansion()
+        self.calculate_cosine_glove_and_rocchio()
 
     def generate_feature_dataframe_1(self):
         """
