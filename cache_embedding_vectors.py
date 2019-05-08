@@ -79,13 +79,12 @@ class Caching:
         print('create document corpus as dict...')
         return Utils.get_document_structure_from_data(self.test, self.paragraph_ids, self.corpus)
 
-    def create_query_embeddings(self):
+    def create_query_embeddings(self, tf_idf):
         """
         create cache for query average word embedding vector
         :return:  Returns a dict of {processed query: embedding vector, ...}
         """
         query_embedding_vector = {}
-        tf_idf = TFIDF(self.doc_structure)
 
         for q in self.queries:
             sum_embedding_vectors = np.zeros(self.vector_dimension)  # create initial empty array
@@ -111,7 +110,7 @@ class Caching:
         # avg_query_embeddings.pkl contains {process_query: nparray, ...}
         pickle.dump(query_embedding_vector, open(self.avg_query_embeddings, 'wb'))
 
-    def create_query_embeddings_query_expansion(self, top_k=10, rocchio_terms=5):
+    def create_query_embeddings_query_expansion(self, tf_idf, top_k=10, rocchio_terms=5):
         """
         Prerequisites: requires cached bm25 scores in cache.
         You have to create the bm25_scores.pkl first!
@@ -123,7 +122,6 @@ class Caching:
         """
         p = Performance()
         query_embedding_vector = {}
-        tf_idf = TFIDF(self.doc_structure)
         bm25_scores = pickle.load(open('cache/bm25_scores.pkl', 'rb'))
 
         for q in self.queries:
@@ -159,16 +157,14 @@ class Caching:
         pickle.dump(query_embedding_vector, open(self.avg_query_expanded_embeddings, 'wb'))
         return query_embedding_vector
 
-    def create_document_embeddings(self):
+    def create_document_embeddings(self, tf_idf):
         """
         create cache for document average word embedding vector
         :return: Returns a dict of {doc ids: embedding vectors, ...}
         """
-        tf_idf = TFIDF(self.doc_structure)
-        matrix = tf_idf.term_doc_matrix
 
         doc_embedding_vectors = {}
-        for docid, terms in matrix.items():
+        for docid, terms in tf_idf.items():
             sum_weight = 0
             sum_embedding_vectors = np.zeros(self.vector_dimension)
             number_terms = len(terms.keys())

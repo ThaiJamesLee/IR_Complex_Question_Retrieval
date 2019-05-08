@@ -27,7 +27,7 @@ class FeatureGenerator:
     Only the generate_feature function needs to be called if requirements are met.
     """
 
-    def __init__(self):
+    def __init__(self, caching=None, tf_idf=None):
 
         # set of predefined strings containing some file paths
         # change here the files to load
@@ -45,9 +45,15 @@ class FeatureGenerator:
         self.cosine_glove = 'cache/cosine_sem_we.pkl'
         self.cosine_glove_we = 'cache/cosine_sem_we_query_exp.pkl'
 
-        self.caching = Caching(process_type='lemma')
+        if caching is None:
+            self.caching = Caching(process_type='lemma')
+        else:
+            self.caching = caching
 
-        self.tf_idf = TFIDF(self.caching.doc_structure)
+        if tf_idf is None:
+            self.tf_idf = TFIDF(self.caching.doc_structure)
+        else:
+            self.tf_idf = tf_idf
 
     def calculate_bm25(self):
         """"
@@ -281,10 +287,10 @@ class FeatureGenerator:
         print('Saved in ', self.features_dataframe_file)
 
 
-print('================== Load Data ===================')
-feature_generator = FeatureGenerator()
-feature_generator.calculate_cosine_semantic_embeddings_query_expansion()
-feature_generator.calculate_cosine_semantic_embeddings()
+# print('================== Load Data ===================')
+# feature_generator = FeatureGenerator()
+# feature_generator.calculate_cosine_semantic_embeddings_query_expansion()
+# feature_generator.calculate_cosine_semantic_embeddings()
 
 # feature_generator.create_cache()
 # feature_generator.calculate_cosine_semantic_embeddings()

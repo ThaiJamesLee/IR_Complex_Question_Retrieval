@@ -16,38 +16,43 @@ Prerequisites:
 """
 
 glove_file = 'glove.840B.300d.txt'
+paragraph_ids_file = 'process_data/paragraph_ids.pkl'
+processed_paragraph_file = 'process_data/lemma_processed_paragraph.pkl'
+test_file = 'process_data/process_test.pkl'
 
-print('Load Data...')
 
-# Load Data to create the count matrix
-paragraph_ids = pickle.load(open('process_data/paragraph_ids.pkl', 'rb'))
-corpus = pickle.load(open('process_data/lemma_processed_paragraph.pkl', 'rb'))
-test = pickle.load(open('process_data/simulated_test.pkl', 'rb'))
+def cache_terms_embedding_vectors():
+    print('Load Data...')
 
-# Here load the pre-trained glove model
-# Not included in the git, since it is 5GB big.
-model = WordEmbedding(glove_file)
+    # Load Data to create the count matrix
+    paragraph_ids = pickle.load(open(paragraph_ids_file, 'rb'))
+    corpus = pickle.load(open(processed_paragraph_file, 'rb'))
+    test = pickle.load(open(test_file, 'rb'))
 
-doc_structure = Utils.get_document_structure_from_data(test, corpus, paragraph_ids)
+    # Here load the pre-trained glove model
+    # Not included in the git, since it is 5GB big.
+    model = WordEmbedding(glove_file)
 
-print('Create Vocabulary...')
-# the vocabulary is a set of terms
-vocabulary = Utils.create_vocabulary_from_dict(doc_structure)
-print(len(vocabulary))
+    doc_structure = Utils.get_document_structure_from_data(test, corpus, paragraph_ids)
 
-term_embedding_vector = {}
+    print('Create Vocabulary...')
+    # the vocabulary is a set of terms
+    vocabulary = Utils.create_vocabulary_from_dict(doc_structure)
+    print(len(vocabulary))
 
-# we iterate over all terms in the vocabulary and get the word embedding vector
-# we save them in a dict as {term: vector, ...}
-for term in vocabulary:
-    try:
-        print('Save vector of term: ', term)
-        term_embedding_vector.update({term: model.get_word_vector_2(term)})
-    except KeyError:
-        print('Passed Term = ', term)
-        pass
+    term_embedding_vector = {}
 
-print('Dump dict of term and embedding vector in the cache...')
-# save the vectors in cache so we don't need to load the whole pre-trained model
-pickle.dump(term_embedding_vector, open('cache/word_embedding_vectors.pkl', 'wb'))
-print('Finish saving.')
+    # we iterate over all terms in the vocabulary and get the word embedding vector
+    # we save them in a dict as {term: vector, ...}
+    for term in vocabulary:
+        try:
+            print('Save vector of term: ', term)
+            term_embedding_vector.update({term: model.get_word_vector_2(term)})
+        except KeyError:
+            print('Passed Term = ', term)
+            pass
+
+    print('Dump dict of term and embedding vector in the cache...')
+    # save the vectors in cache so we don't need to load the whole pre-trained model
+    pickle.dump(term_embedding_vector, open('cache/word_embedding_vectors.pkl', 'wb'))
+    print('Finish saving.')

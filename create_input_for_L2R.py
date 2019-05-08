@@ -63,4 +63,4 @@ class createInputForL2R:
                       f"5:{input.iloc[i,6]} #docid = {input.iloc[i,7]} ", file=text_file)
 
 
-createInputForL2R('process_data/process_train.pkl', 'process_data/process_test.pkl')
+# createInputForL2R('process_data/process_train.pkl', 'process_data/process_test.pkl')
