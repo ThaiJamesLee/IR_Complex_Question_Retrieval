@@ -17,6 +17,7 @@ from create_features import FeatureGenerator
 from tf_idf import TFIDF
 import create_input_for_L2R
 from metrics_calculate import Metrics
+from L2R import L2R_test
 import os
 
 import cache_word_embeddings
@@ -45,7 +46,7 @@ exec_with_multithread = True
 
 
 def execute():
-    # Preprocess(process_type, train_paragraphs, train_pages, train_pages_toplevel, train_pages_hierarchical, train_pages_article)
+    Preprocess(process_type, train_paragraphs, train_pages, train_pages_toplevel, train_pages_hierarchical, train_pages_article)
 
     # execute this to cache semantic word embeddings
     # this requires the glove.840B.300d.txt file in this directory
@@ -56,33 +57,36 @@ def execute():
 
     tf_idf = TFIDF(c.doc_structure)
 
-    # save glove vectors in cache
+    # save glove vectors for query and docs in cache
     c.create_document_embeddings(tf_idf.term_doc_matrix)
     c.create_query_embeddings(tf_idf)
 
     feature_generator = FeatureGenerator(caching=c, tf_idf=tf_idf)
 
+    # calculate relevance scores for bm25 and tf-idf
     feature_generator.calculate_bm25()
     feature_generator.calculate_cosine_tf_idf()
 
+    #
     # this requires the bm25 scores cached
+    # save glove vectors for query + rocchio in cache
     c.create_query_embeddings_query_expansion(tf_idf)
 
+    # calculate scores for tf-idf+rocchtio, glove+rocchtio, glove
     feature_generator.calculate_cosine_tf_idf_rocchio()
     feature_generator.calculate_cosine_glove_and_rocchio()
     feature_generator.calculate_cosine_glove()
 
     create_input_for_L2R.createInputForL2R('process_data/process_train.pkl', 'process_data/process_test.pkl')
 
-    # calculate metrices for bm25, tf-idf, tf-idf + rocchio, glove, glove + rocchio
+    # calculate metrics for bm25, tf-idf, tf-idf + rocchio, glove, glove + rocchio
     m = Metrics(top_k=20)
     if exec_with_multithread:
         m.excecute_multithreaded(threshold=threshold, only_actual=only_actual)
     else:
         m.execute_singethreaded(threshold=threshold, only_actual=only_actual)
 
-    # run L2R
-    # TODO
+    L2R_test.execute_L2R(L2R_test.LambdaMART_md)
 
 
 if __name__ == "__main__":

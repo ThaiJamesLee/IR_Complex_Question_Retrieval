@@ -78,7 +78,6 @@ class FeatureGenerator:
                 # scores = Performance.filter_relevance_by_threshold(scores)
                 rel_scores.update({q: scores})
 
-
             # dump in specified file
             print('Save relevance scores...')
             pickle.dump(rel_scores, open(self.bm25_scores_file, 'wb'))
@@ -166,7 +165,6 @@ class FeatureGenerator:
         document_embeddings = pickle.load(open(self.caching.avg_doc_embeddings, 'rb'))
 
         num_queries = len(query_embeddings.keys())
-
 
         print('Calculate cosine for avg embedding vectors...')
         counter = 1

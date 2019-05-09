@@ -89,6 +89,13 @@ evaluate = 'java -jar L2R/RankLib-2.1-patched.jar ' \
 save_re_ranking = 'java -jar L2R/RankLib-2.1-patched.jar ' \
                   '-load CoordinateAscent_md.txt -rank input_for_L2R/input_test.txt -score re_ranking_result.txt'
 
-print('-----Start-----')
-# run experiments
-os.system(LambdaMART_md)
+
+def execute_L2R(cmd):
+        """
+        Execute a command like "java -jar L2R/RankLib-2.1-patched.jar -someParams ..."
+        :param cmd: one of the commands defined in this file.
+        :return: nothing.
+        """
+        print('-----Start-----')
+        # run experiments
+        os.system(cmd)

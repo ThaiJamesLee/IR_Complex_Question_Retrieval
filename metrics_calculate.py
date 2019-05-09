@@ -75,8 +75,10 @@ class Metrics:
                 t = Thread(target=self.calculate_metrics, args=(k, v, score_queue, threshold, only_actual))
                 threads.append(t)
                 t.start()
+
             for t in threads:
                 t.join()
+
             while not score_queue.empty():
                 scores.append(score_queue.get())
         except:

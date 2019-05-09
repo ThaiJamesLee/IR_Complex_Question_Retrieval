@@ -162,9 +162,6 @@ for k, v in query_map.items():
     print(v)
     precision = AveragePrecision.avg_precision_score(y_pred, y_true)
     print('Avg. Precision Score', precision)
-    recall = AveragePrecision.avg_recall_score(y_pred, y_true)
-    print('Avg. Recall Score', recall)
     p.add_precision_score(v, precision)
-    p.add_recall_score(v, recall)
 print(p.mean_avg_precision())
 
