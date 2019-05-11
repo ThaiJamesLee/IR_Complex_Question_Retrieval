@@ -17,6 +17,7 @@ class BM25:
         :param k:  default: k = 1.2, k is best in [1.2, 2.0]
         """
         self.documents = documents
+        self.cache = dict()
         self.num_docs = len(self.documents.keys())
         self.avg_doc_len = self.get_average_doc_length()
         if b is None:
@@ -83,10 +84,15 @@ class BM25:
         :return: the idf weight for given term.
         """
         df = 0
+        if term not in self.cache.keys():
 
-        for k, v in self.documents.items():
-            if self.get_term_frequency_in_doc(term, k) > 0:
-                df = df + 1
+            for k, v in self.documents.items():
+                if self.get_term_frequency_in_doc(term, k) > 0:
+                    df = df + 1
+            self.cache.update({term: df})
+        else:
+            df = self.cache[term]
+
         idf = math.log(1 + (self.num_docs - df + 0.5)/(df + 0.5))
         return idf
 
