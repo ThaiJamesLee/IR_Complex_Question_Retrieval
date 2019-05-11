@@ -10,20 +10,20 @@ class createInputForL2R:
 
     """
 
-    bm25_score = pickle.load(open('cache/bm25_scores.pkl', 'rb'))
-    tfidf_score = pickle.load(open('cache/cosine_tf_idf.pkl', 'rb'))
-    glove_score = pickle.load(open('cache/cosine_sem_we.pkl', 'rb'))
-    tfidf_rocchio_score = pickle.load(open('cache/cosine_query_expansion.pkl', 'rb'))
-    glove_rocchio_score = pickle.load(open('cache/cosine_sem_we_query_exp.pkl', 'rb'))
-
     def __init__(self, train, test):
+
+        self.bm25_score = pickle.load(open('cache/bm25_scores.pkl', 'rb'))
+        self.tfidf_score = pickle.load(open('cache/cosine_tf_idf.pkl', 'rb'))
+        self.glove_score = pickle.load(open('cache/cosine_sem_we.pkl', 'rb'))
+        self.tfidf_rocchio_score = pickle.load(open('cache/cosine_query_expansion.pkl', 'rb'))
+        self.glove_rocchio_score = pickle.load(open('cache/cosine_sem_we_query_exp.pkl', 'rb'))
+
         train = pickle.load(open(train, 'rb'))
         test = pickle.load(open(test, 'rb'))
         createInputForL2R.input_for_package(train, 'train')
         createInputForL2R.input_for_package(test, 'test')
 
-    @classmethod
-    def get_feature(cls, df):
+    def get_feature(self, df):
         num = df.shape[0]
         x = np.zeros((num, 5))
         y = df['rel'].values
@@ -31,11 +31,11 @@ class createInputForL2R:
         for i in range(num):
             q = df['query'].values[i]
             d = df['docid'].values[i]
-            x[i, 0] = Utils.get_value_from_key_in_dict(cls.bm25_score, d, q)
-            x[i, 1] = Utils.get_value_from_key_in_dict(cls.tfidf_score, d, q)
-            x[i, 2] = Utils.get_value_from_key_in_dict(cls.glove_score, d, q)
-            x[i, 3] = Utils.get_value_from_key_in_dict(cls.tfidf_rocchio_score, d, q)
-            x[i, 4] = Utils.get_value_from_key_in_dict(cls.glove_rocchio_score, d, q)
+            x[i, 0] = Utils.get_value_from_key_in_dict(self.bm25_score, d, q)
+            x[i, 1] = Utils.get_value_from_key_in_dict(self.tfidf_score, d, q)
+            x[i, 2] = Utils.get_value_from_key_in_dict(self.glove_score, d, q)
+            x[i, 3] = Utils.get_value_from_key_in_dict(self.tfidf_rocchio_score, d, q)
+            x[i, 4] = Utils.get_value_from_key_in_dict(self.glove_rocchio_score, d, q)
         return x, y, qlist
 
     @staticmethod
