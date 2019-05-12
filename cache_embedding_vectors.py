@@ -48,7 +48,7 @@ class Caching:
         # create queries
         self.raw_query = pickle.load(open('process_data/raw_query.pkl', 'rb'))
         # self.query_map = Caching.create_query_map(self.raw_query, self.process_type)
-        self.test = pickle.load(open('process_data/simulated_test.pkl', 'rb'))
+        self.test = pickle.load(open('process_data/process_test.pkl', 'rb'))
         # self.unique_doc = np.unique(list(self.test['docid']))
         self.paragraph_ids = pickle.load(open('process_data/paragraph_ids.pkl', 'rb'))
         self.doc_structure = self.create_document_corpus()

@@ -33,7 +33,6 @@ class FeatureGenerator:
         # change here the files to load
         self.paragraph_corpus_file = 'process_data/lemma_process_paragraph.pkl'
         self.paragraph_id_file = 'process_data/paragraph_ids.pkl'
-        self.test_data_file = 'process_data/simulated_test.pkl'
 
         # set here where to save the cached data
         self.bm25_scores_file = 'cache/bm25_scores.pkl'

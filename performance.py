@@ -241,7 +241,6 @@ class ReciprocalRank:
         :return: returns the reciprocal rank of the predicted query document
         """
 
-
         actual_doc_ids = list(actual['docid'])
         actual_relevance = list(actual['rel'])
 

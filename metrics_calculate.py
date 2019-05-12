@@ -35,7 +35,7 @@ class Metrics:
         # cosine similarity tfidf with glove word embedding + rocchio
         self.glove_rocchio_scores = pickle.load(open('cache/cosine_sem_we_query_exp.pkl', 'rb'))
 
-        self.top_k = 10
+        self.top_k = top_k
         print('Set documents top_k to', top_k)
 
         """
@@ -96,8 +96,21 @@ class Metrics:
 
         return scores
 
+    def calculate_map_bm25(self, name, threshold=0.0, only_actual=True):
+        """
+        Used for some testing.
+        :param name:
+        :param threshold:
+        :param only_actual:
+        :return:
+        """
+        map = AveragePrecision().calculate_map(name, self.queries, self.true_labels, self.bm25_scores, self.top_k, threshold=threshold, only_actual=only_actual)
+        return map
 
-# print(Metrics().excecute_multithreaded())
+
+# m = Metrics(top_k=20)
+# print(m.calculate_map_bm25('BM25'))
+print(Metrics(top_k=30).excecute_multithreaded(only_actual=True))
 # print(execute_singethreaded())
 
 
