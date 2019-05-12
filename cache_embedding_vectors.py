@@ -93,7 +93,7 @@ class Caching:
         counter = 1
         num_q = len(self.queries)
         for q in self.queries:
-            print(f'{counter} / {len(num_q)}')
+            print(f'{counter} / {num_q}')
             counter += 1
 
             sum_embedding_vectors = np.zeros(self.vector_dimension)  # create initial empty array
@@ -144,7 +144,7 @@ class Caching:
         counter = 1
         num_q = len(self.queries)
         for q in self.queries:
-            print(f'{counter} / {len(num_q)}')
+            print(f'{counter} / {num_q}')
             counter += 1
 
             sum_embedding_vectors = np.zeros(self.vector_dimension)  # create initial empty array
