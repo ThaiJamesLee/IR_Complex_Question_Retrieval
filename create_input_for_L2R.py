@@ -20,8 +20,8 @@ class createInputForL2R:
 
         train = pickle.load(open(train, 'rb'))
         test = pickle.load(open(test, 'rb'))
-        createInputForL2R.input_for_package(train, 'train')
-        createInputForL2R.input_for_package(test, 'test')
+        self.input_for_package(train, 'train')
+        self.input_for_package(test, 'test')
 
     def get_feature(self, df):
         num = df.shape[0]
@@ -38,9 +38,8 @@ class createInputForL2R:
             x[i, 4] = Utils.get_value_from_key_in_dict(self.glove_rocchio_score, d, q)
         return x, y, qlist
 
-    @staticmethod
-    def input_for_package(df, filename):
-        x, _, query = createInputForL2R.get_feature(df)
+    def input_for_package(self, df, filename):
+        x, _, query = self.get_feature(df)
         qid = np.zeros(df.shape[0])
         index = 1
         for i in range(len(qid) - 1):

@@ -37,18 +37,21 @@ train_pages_article = 'test200-train/train.pages.cbor-article.qrels'
 
 # filter scores by threshold
 threshold = 0.0
+top_k = 20
 
+# when using rocchio: expand query by the number of new terms
 rocchio_terms = 5
 
 # true: use only documents that have the true label for metrics calculation
-only_actual = False
+# otherwise it takes the top_k relevant documents (according to the algorithms)
+only_actual = True
 
 # run metrics calculation with multiple threads
 exec_with_multithread = True
 
 
 def execute():
-    # Preprocess(process_type, train_paragraphs, train_pages, train_pages_toplevel, train_pages_hierarchical, train_pages_article)
+    Preprocess(process_type, train_paragraphs, train_pages, train_pages_toplevel, train_pages_hierarchical, train_pages_article)
 
     # execute this to cache semantic word embeddings
     # this requires the glove.840B.300d.txt file in this directory
@@ -82,7 +85,7 @@ def execute():
     create_input_for_L2R.createInputForL2R('process_data/process_train.pkl', 'process_data/process_test.pkl')
 
     # calculate metrics for bm25, tf-idf, tf-idf + rocchio, glove, glove + rocchio
-    m = Metrics(top_k=20)
+    m = Metrics(top_k=top_k)
     if exec_with_multithread:
         m.excecute_multithreaded(threshold=threshold, only_actual=only_actual)
     else:
