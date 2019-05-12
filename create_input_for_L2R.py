@@ -10,7 +10,7 @@ class createInputForL2R:
 
     """
 
-    def __init__(self, train, test):
+    def __init__(self, train, test, rocchio_term=5):
 
         self.bm25_score = pickle.load(open('cache/bm25_scores.pkl', 'rb'))
         self.tfidf_score = pickle.load(open('cache/cosine_tf_idf.pkl', 'rb'))

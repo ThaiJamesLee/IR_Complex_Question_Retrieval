@@ -39,7 +39,7 @@ class FeatureGenerator:
         self.similarity_tf_idf_scores_file = 'cache/cosine_tf_idf.pkl'
         self.similarity_if_idf_scores_query_exp_file = 'cache/cosine_tf_idf_qe.pkl'
         self.similarity_semantic_word_embedding_scores_file = 'cache/cosine_sem_we.pkl'
-        self.similarity_query_expansion_file = 'cache/cosine_query_expansion.pkl'
+        self.similarity_query_expansion_file = 'cache/cosine_query_expansion_'
         self.features_dataframe_file = 'cache/features_dataframe.pkl'
         self.cosine_glove = 'cache/cosine_sem_we.pkl'
         self.cosine_glove_we = 'cache/cosine_sem_we_query_exp.pkl'
@@ -119,7 +119,7 @@ class FeatureGenerator:
             pickle.dump(similarity_scores_tf_idf, open(self.similarity_tf_idf_scores_file, 'wb'))
             print('Saved in', self.similarity_tf_idf_scores_file)
 
-    def calculate_cosine_tf_idf_rocchio(self, top_k=10):
+    def calculate_cosine_tf_idf_rocchio(self, top_k=10, rocchio_terms=5):
         print('Calculate similarity with query expansion')
         p = Performance()
 
@@ -140,7 +140,7 @@ class FeatureGenerator:
 
             relevant_docs = p.filter_relevance_by_top_k(bm25_relevance_scores[q], top_k)
             non_relevant_docs = p.filter_pred_negative(bm25_relevance_scores[q])
-            new_query = rocchio.execute_rocchio(relevant_docs, non_relevant_docs, 5)
+            new_query = rocchio.execute_rocchio(relevant_docs, non_relevant_docs, rocchio_terms)
             query_expansion_cache.update({q: new_query})
 
             similarities = {}
@@ -151,8 +151,7 @@ class FeatureGenerator:
             similarity_scores_tf_idf.update({q: similarities})
 
         print('Save similarities and expanded queries...')
-        pickle.dump(similarity_scores_tf_idf, open(self.similarity_query_expansion_file, 'wb'))
-        pickle.dump(similarity_scores_tf_idf, open('cache/rocchio_expanded_queries.pkl', 'wb'))
+        pickle.dump(similarity_scores_tf_idf, open(self.similarity_query_expansion_file + f'{rocchio_terms}.pkl', 'wb'))
         print('Saved.')
 
     def calculate_cosine_glove(self):
@@ -185,17 +184,17 @@ class FeatureGenerator:
         pickle.dump(similarity_scores_we, open(self.cosine_glove, 'wb'))
         # print(similarity_scores_we)
 
-    def calculate_cosine_glove_and_rocchio(self):
+    def calculate_cosine_glove_and_rocchio(self, rocchio_terms=5):
 
         # cosine for avg embedding vector
         print('Load cached embeddings...')
 
-        query_embeddings = pickle.load(open(self.caching.avg_query_expanded_embeddings, 'rb'))
+        query_embeddings = pickle.load(open(self.caching.avg_query_expanded_embeddings + f'{rocchio_terms}.pkl', 'rb'))
         document_embeddings = pickle.load(open(self.caching.avg_doc_embeddings, 'rb'))
 
         print('Calculate cosine for avg embedding vectors...')
 
-        counter = 0
+        counter = 1
         similarity_scores_we = {}
 
         num_queries = len(query_embeddings.keys())

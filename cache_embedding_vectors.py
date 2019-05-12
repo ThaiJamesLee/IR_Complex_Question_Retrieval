@@ -56,7 +56,7 @@ class Caching:
         # cache file paths
         self.avg_query_embeddings = 'cache/avg_query_embeddings.pkl'
         self.avg_doc_embeddings = 'cache/avg_doc_embeddings.pkl'
-        self.avg_query_expanded_embeddings = 'cache/avg_query_expanded_embeddings.pkl'
+        self.avg_query_expanded_embeddings = 'cache/avg_query_expanded_embeddings_'
 
     @staticmethod
     def create_query_map(raw_query, process_type):
@@ -89,7 +89,13 @@ class Caching:
         """
         query_embedding_vector = {}
 
+        print('Create embedding vectors for queries...')
+        counter = 1
+        num_q = len(self.queries)
         for q in self.queries:
+            print(f'{counter} / {len(num_q)}')
+            counter += 1
+
             sum_embedding_vectors = np.zeros(self.vector_dimension)  # create initial empty array
             terms = q.split()
 
@@ -111,7 +117,9 @@ class Caching:
 
             query_embedding_vector.update({q: sum_embedding_vectors})
         # avg_query_embeddings.pkl contains {process_query: nparray, ...}
+        print(f'Save query embedding vectors in {self.avg_query_embeddings}')
         pickle.dump(query_embedding_vector, open(self.avg_query_embeddings, 'wb'))
+        print('Saved.')
 
     def create_query_embeddings_query_expansion(self, tf_idf, top_k=10, rocchio_terms=5):
         """
@@ -132,7 +140,13 @@ class Caching:
         print('Load BM25 scores...')
         bm25_scores = pickle.load(open('cache/bm25_scores.pkl', 'rb'))
 
+        print('Create embedding vectors for expanded queries...')
+        counter = 1
+        num_q = len(self.queries)
         for q in self.queries:
+            print(f'{counter} / {len(num_q)}')
+            counter += 1
+
             sum_embedding_vectors = np.zeros(self.vector_dimension)  # create initial empty array
             tfidf_q = tf_idf.create_query_vector(q)
             rocchio = RocchioOptimizeQuery(query_vector=tfidf_q, tf_idf_matrix=tf_idf.term_doc_matrix)
@@ -161,8 +175,11 @@ class Caching:
                 sum_embedding_vectors[idx] = sum_embedding_vectors[idx] / sum_weight
 
             query_embedding_vector.update({q: sum_embedding_vectors})
-        # avg_query_embeddings.pkl contains {process_query: nparray, ...}
-        pickle.dump(query_embedding_vector, open(self.avg_query_expanded_embeddings, 'wb'))
+
+        file_path = self.avg_query_expanded_embeddings + f'{rocchio_terms}.pkl'
+        print(f'Save expanded query embedding vectors in {file_path}')
+        pickle.dump(query_embedding_vector, open(file_path, 'wb'))
+        print('Saved.')
         return query_embedding_vector
 
     def create_document_embeddings(self, tf_idf):
@@ -172,7 +189,13 @@ class Caching:
         """
 
         doc_embedding_vectors = {}
+        print('Create embedding vectors for documents...')
+        counter = 1
+        num_q = len(tf_idf.keys())
         for docid, terms in tf_idf.items():
+            print(f'{counter} / {num_q}')
+            counter += 1
+
             sum_weight = 0
             sum_embedding_vectors = np.zeros(self.vector_dimension)
             number_terms = len(terms.keys())
@@ -191,8 +214,10 @@ class Caching:
                     sum_embedding_vectors = np.zeros(self.vector_dimension)
 
             doc_embedding_vectors.update({docid: sum_embedding_vectors})
-        # avg_doc_embeddings.pkl contains {docid: nparray, ...}
+
+        print(f'Save document embedding vectors in {self.avg_doc_embeddings}...')
         pickle.dump(doc_embedding_vectors, open(self.avg_doc_embeddings, 'wb'))
+        print('Saved.')
 
     @staticmethod
     def clear_cache():

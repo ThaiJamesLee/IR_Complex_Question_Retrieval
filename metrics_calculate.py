@@ -110,7 +110,7 @@ class Metrics:
 
 # m = Metrics(top_k=20)
 # print(m.calculate_map_bm25('BM25'))
-print(Metrics(top_k=30).excecute_multithreaded(only_actual=True))
+# print(Metrics(top_k=30).excecute_multithreaded(only_actual=True))
 # print(execute_singethreaded())
 
 

@@ -38,6 +38,8 @@ train_pages_article = 'test200-train/train.pages.cbor-article.qrels'
 # filter scores by threshold
 threshold = 0.0
 
+rocchio_terms = 5
+
 # true: use only documents that have the true label for metrics calculation
 only_actual = False
 
@@ -46,7 +48,7 @@ exec_with_multithread = True
 
 
 def execute():
-    Preprocess(process_type, train_paragraphs, train_pages, train_pages_toplevel, train_pages_hierarchical, train_pages_article)
+    # Preprocess(process_type, train_paragraphs, train_pages, train_pages_toplevel, train_pages_hierarchical, train_pages_article)
 
     # execute this to cache semantic word embeddings
     # this requires the glove.840B.300d.txt file in this directory
@@ -70,11 +72,11 @@ def execute():
     #
     # this requires the bm25 scores cached
     # save glove vectors for query + rocchio in cache
-    c.create_query_embeddings_query_expansion(tf_idf)
+    c.create_query_embeddings_query_expansion(tf_idf, rocchio_terms=rocchio_terms)
 
     # calculate scores for tf-idf+rocchtio, glove+rocchtio, glove
-    feature_generator.calculate_cosine_tf_idf_rocchio()
-    feature_generator.calculate_cosine_glove_and_rocchio()
+    feature_generator.calculate_cosine_tf_idf_rocchio(rocchio_terms=rocchio_terms)
+    feature_generator.calculate_cosine_glove_and_rocchio(rocchio_terms=rocchio_terms)
     feature_generator.calculate_cosine_glove()
 
     create_input_for_L2R.createInputForL2R('process_data/process_train.pkl', 'process_data/process_test.pkl')
