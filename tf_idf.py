@@ -131,7 +131,13 @@ class TFIDF:
         :param query: list of query strings.
         :return: tf-idf vector as dict.
         """
-        tokens = query.split()
+
+        tokens = query
+        if type(tokens) == str:
+            tokens = query.split()
+        elif type(tokens) != str and type(tokens) != list:
+            raise Exception('Invalid Input. Query must be of type str or list!')
+
         tokens_set = set(tokens)
         word_dict = dict.fromkeys(tokens_set, 0)
         word_dict_temp = dict.fromkeys(tokens_set, 0)

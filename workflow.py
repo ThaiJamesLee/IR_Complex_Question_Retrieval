@@ -55,7 +55,8 @@ def execute():
 
     # execute this to cache semantic word embeddings
     # this requires the glove.840B.300d.txt file in this directory
-
+    # uncomment this if you have
+    #
     # cache_word_embeddings.cache_terms_embedding_vectors()
 
     c = Caching(process_type=process_type)
@@ -91,11 +92,12 @@ def execute():
     else:
         m.execute_singethreaded(threshold=threshold, only_actual=only_actual)
 
-    L2R_test.execute_L2R(L2R_test.LambdaMART_md)
+    L2R_test.execute_L2R(L2R_test.CoordinateAscent_md)
 
 
 if __name__ == "__main__":
-    execute()
+    # execute()
+    L2R_test.execute_L2R(L2R_test.MART_md)
 
 
 

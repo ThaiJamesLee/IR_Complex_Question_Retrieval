@@ -98,6 +98,12 @@ class Utils:
         return doc_structure
 
     @staticmethod
+    def get_document_term_from_data(df, corpus_ids, corpus):
+        unique_docid = set(df['docid'])
+        unique_docs = [(docid, corpus[corpus_ids.index(docid)].split()) for docid in unique_docid]
+        return unique_docs
+
+    @staticmethod
     def get_value_from_key_in_dict(thedict, docid, key):
         """
         :param thedict: the dictionary, that should have numerics as values.

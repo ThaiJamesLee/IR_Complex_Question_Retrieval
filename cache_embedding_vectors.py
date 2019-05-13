@@ -82,6 +82,9 @@ class Caching:
         print('create document corpus as dict...')
         return Utils.get_document_structure_from_data(self.test, self.paragraph_ids, self.corpus)
 
+    def create_doc_terms(self):
+        return Utils.get_document_term_from_data(self.test, self.paragraph_ids, self.corpus)
+
     def create_query_embeddings(self, tf_idf):
         """
         create cache for query average word embedding vector
@@ -218,6 +221,62 @@ class Caching:
         print(f'Save document embedding vectors in {self.avg_doc_embeddings}...')
         pickle.dump(doc_embedding_vectors, open(self.avg_doc_embeddings, 'wb'))
         print('Saved.')
+
+    def create_document_embeddings_rocchio(self, tf_idf, path, top_k=10,rocchio_terms=5):
+        """
+
+        :param tf_idf: the dictionary q: docid: value
+        :param path: path where to save vectors
+        :param rocchio_terms: number of terms added to new query
+        :return:
+        """
+        p = Performance()
+        document_embedding_vectors = {}
+        print('Load BM25 scores...')
+        bm25_scores = pickle.load(open('documents_retrieval/doc_doc_bm25_scores.pkl', 'rb'))
+
+        print('Create embedding vecots for expanded documents...')
+        counter = 1
+        num_q = len(self.doc_structure.keys())
+        for q in self.doc_structure.keys():
+            print(f'{counter} / {num_q}')
+            counter += 1
+
+            sum_embedding_vectors = np.zeros(self.vector_dimension)  # create initial empty array
+            tfidf_q = tf_idf[q]
+            rocchio = RocchioOptimizeQuery(query_vector=tfidf_q, tf_idf_matrix=tf_idf.term_doc_matrix)
+            scores = {}
+            try:
+                scores = bm25_scores[q]
+            except KeyError:
+                pass
+
+            relevant_docs = p.filter_relevance_by_top_k(scores, top_k)
+            non_relevant_docs = p.filter_pred_negative(scores)
+            new_query = rocchio.execute_rocchio(relevant_docs, non_relevant_docs, rocchio_terms)
+
+            sum_weight = 0
+
+            for term, value in new_query.items():
+                try:
+                    weight = value
+                    sum_weight += weight
+                    we = np.multiply(weight, self.cached_embeddings[term])
+                    sum_embedding_vectors = np.add(sum_embedding_vectors, we)
+                except KeyError:
+                    pass
+
+            for idx in range(self.vector_dimension):
+                sum_embedding_vectors[idx] = sum_embedding_vectors[idx] / sum_weight
+
+            document_embedding_vectors.update({q: sum_embedding_vectors})
+
+        print(f'Save expanded document embedding vectors in {path}')
+        pickle.dump(document_embedding_vectors, open(path, 'wb'))
+        print('Saved.')
+        return document_embedding_vectors
+
+
 
     @staticmethod
     def clear_cache():

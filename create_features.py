@@ -28,6 +28,11 @@ class FeatureGenerator:
     """
 
     def __init__(self, caching=None, tf_idf=None):
+        """
+
+        :param caching: a Cache instance
+        :param tf_idf: a TFIDF insance
+        """
 
         # set of predefined strings containing some file paths
         # change here the files to load
@@ -44,6 +49,9 @@ class FeatureGenerator:
         self.cosine_glove = 'cache/cosine_sem_we.pkl'
         self.cosine_glove_we = 'cache/cosine_sem_we_query_exp.pkl'
 
+        # where to save cached data for doc-doc pairs
+        self.folder = 'documents_retrieval/'
+
         if caching is None:
             self.caching = Caching(process_type='lemma')
         else:
@@ -54,6 +62,9 @@ class FeatureGenerator:
         else:
             self.tf_idf = tf_idf
         self.num_queries = len(self.caching.queries)
+
+        # a cache use for various stuff
+        self.temp_cache = set()
 
     def calculate_bm25(self):
         """"
@@ -128,7 +139,6 @@ class FeatureGenerator:
         tf_idf = self.tf_idf
 
         similarity_scores_tf_idf = {}
-        query_expansion_cache = {}
         counter = 1
         for q in self.caching.queries:
             query_vector = tf_idf.create_query_vector(q)
@@ -141,7 +151,6 @@ class FeatureGenerator:
             relevant_docs = p.filter_relevance_by_top_k(bm25_relevance_scores[q], top_k)
             non_relevant_docs = p.filter_pred_negative(bm25_relevance_scores[q])
             new_query = rocchio.execute_rocchio(relevant_docs, non_relevant_docs, rocchio_terms)
-            query_expansion_cache.update({q: new_query})
 
             similarities = {}
             for docid, terms in tf_idf.term_doc_matrix.items():
@@ -230,100 +239,189 @@ class FeatureGenerator:
         self.caching.create_document_embeddings()
         print('saved.')
 
-    def generate_features_scores_and_cache(self):
+    def generate_bm25_doc_doc(self):
         """
-        Calculate all different scores (relevance with bm25, cosine similarity
-        (tf-idf, tf-idf with query expansion, semantic word embedding)
-        You can also just call the functions you need. Only use this, if you have none of the scores in cache.
-        """
-        print('================== Calculate BM25 scores  ===========================================')
-        self.calculate_bm25()
-
-        print('================== Cosine Similarity scores  ========================================')
-        self.calculate_cosine_tf_idf()
-
-        print('================== Cosine Similarity scores with query expansion  ===================')
-        self.calculate_cosine_tf_idf_rocchio()
-
-        print('================== Cosine Similarity scores with semantic word embeddings  ==========')
-        self.calculate_cosine_glove()
-
-        print('================== Cosine semantic word embedding with query expansion ==============')
-        self.calculate_cosine_glove_and_rocchio()
-
-    def generate_feature_dataframe_1(self):
-        """
-        @deprecated
+        Generates all features for doc: doc: score.
+        This includes tf-idf, tf-idf + rocchio, bm25, glove, glove + rocchio
         :return:
         """
-        print('Load scores...')
-        bm25_scores = pickle.load(open(self.bm25_scores_file, 'rb'))
-        tfidf_word_embedding_scores = pickle.load(open(self.similarity_semantic_word_embedding_scores_file, 'rb'))
-        tfidf_scores = pickle.load(open(self.similarity_tf_idf_scores_file, 'rb'))
-        query_expansion_scores = pickle.load(open(self.similarity_query_expansion_file, 'rb'))
+        # where to store every result
 
-        queries = self.caching.queries
-        # cols = ['q', 'docid', 'bm25', 'tfidf', 'wordembedding', 'queryexpansion']
         docids = self.caching.doc_structure.keys()
-        df = pd.DataFrame()
-        print('Generate Dataframe...')
 
-        for qe in queries:
-            for docid in docids:
-                df.append({'q': qe,
-                           'docid': docid,
-                           'bm25': Utils.get_value_from_key_in_dict(bm25_scores, qe),
-                           'tfidf': Utils.get_value_from_key_in_dict(tfidf_scores, qe),
-                          'wordembedding': Utils.get_value_from_key_in_dict(tfidf_word_embedding_scores, qe),
-                           'queryexpansion': Utils.get_value_from_key_in_dict(query_expansion_scores, qe)})
+        bm25 = BM25(self.caching.doc_structure)
 
-        print('Save Feature Dataframe...')
-        pickle.dump(df, open(self.features_dataframe_file, 'wb'))
-        print('Saved in ', self.features_dataframe_file)
+        # contains docid: list(terms)
+        docs = self.caching.create_doc_terms()
+        print('Calculate BM25...')
+        filepath_bm25 = f'{self.folder}doc_doc_bm25_scores.pkl'
+        try:
+            open(filepath_bm25, 'rb')
+            print(f'Scores already cached in {filepath_bm25}')
+        except FileNotFoundError:
+            scores = dict()
+            counter = 1
+            for (doc, terms) in docs:
+                print(doc, f' {counter} / {len(docs)}')
+                counter += 1
 
-        return df
+                score = bm25.compute_relevance_on_corpus(terms)
+                scores.update({doc: score})
+            print(scores)
+            print(f'Store BM25 scores in {filepath_bm25}')
+            pickle.dump(scores, open(filepath_bm25, 'wb'))
+            print('Saved.')
 
-    def generate_feature_dataframe_2(self):
+    def generate_cosine_tfidf_doc_doc(self):
         """
-        @deprecated
+        Calculate cosine similarities of tf idf, where one document is a query against all other
         :return:
         """
-        print('Load scores...')
-        bm25_scores = pickle.load(open(self.bm25_scores_file, 'rb'))
-        tfidf_word_embedding_scores = pickle.load(open(self.similarity_semantic_word_embedding_scores_file, 'rb'))
-        tfidf_scores = pickle.load(open(self.similarity_tf_idf_scores_file, 'rb'))
-        query_expansion_scores = pickle.load(open(self.similarity_query_expansion_file, 'rb'))
+        filepath = f'{self.folder}doc_doc_tfidf_scores.pkl'
+        tf_idf = self.tf_idf
 
-        queries = self.caching.queries
-        docids = self.caching.doc_structure.keys()
+        counter = 1
+        num_q = len(tf_idf.term_doc_matrix.keys())
 
-        scores = []
-        query_index = 0
+        scores = {}
+        try:
+            open(filepath, 'rb')
+            print(f'Scores already cached in {filepath}')
+        except FileNotFoundError:
+            for k, v in tf_idf.term_doc_matrix.items():
 
-        qid = []
+                print(k, f'{counter} / {num_q}')
+                counter += 1
+                similarity = {}
+                for k1, v1 in tf_idf.term_doc_matrix.items():
+                    score = Similarity.cosine_similarity_normalized(v, v1)
+                    if score > 0:
+                        similarity.update({k1: score})
+                scores.update({k: similarity})
 
-        for qe in queries:
-            for docid in docids:
-                row = [Utils.get_value_from_key_in_dict(bm25_scores, docid, qe),
-                       Utils.get_value_from_key_in_dict(tfidf_scores, docid, qe),
-                       Utils.get_value_from_key_in_dict(tfidf_word_embedding_scores, docid, qe),
-                       Utils.get_value_from_key_in_dict(query_expansion_scores, docid, qe)]
-                if np.sum(row) > 0:
-                    scores.append(row)
-                    qid.append(query_index)
-            query_index += 1
+            print(f'Store TF-IDF scores in {filepath}')
+            pickle.dump(scores, open(filepath, 'wb'))
+            print('Saved.')
 
-        scores = np.array(scores)
-        qid = np.array(qid)
+    def generate_cosine_tfidf_rocchio_doc_doc(self, top_k=10, rocchio_terms=5):
+        """
 
-        print('Save Feature Dataframe...')
-        pickle.dump(scores, open(self.features_dataframe_file, 'wb'))
-        pickle.dump(qid, open('cache/query_index.pkl', 'wb'))
-        print('Saved in ', self.features_dataframe_file)
+        :param top_k: setting for rocchio to consider which bm25 the number of most similar docs
+        :param rocchio_terms: number of terms to add to the new query (in this case document
+        :return:
+        """
+
+        bm25_scores = pickle.load(open(f'{self.folder}doc_doc_bm25_scores.pkl', 'rb'))
+        p = Performance()
+
+        filepath = f'{self.folder}doc_doc_tfidf_rocchio_scores.pkl'
+        tf_idf = self.tf_idf
+
+        counter = 1
+        num_q = len(tf_idf.term_doc_matrix.keys())
+
+        scores = {}
+        try:
+            open(filepath, 'rb')
+            print(f'Scores already cached in {filepath}')
+        except FileNotFoundError:
+            for k, v in tf_idf.term_doc_matrix.items():
+
+                print(k, f'{counter} / {num_q}')
+                counter += 1
+
+                rocchio = RocchioOptimizeQuery(query_vector=v, tf_idf_matrix=tf_idf.term_doc_matrix)
+                relevant_docs = p.filter_relevance_by_top_k(bm25_scores[k], top_k)
+                non_relevant_docs = p.filter_pred_negative(bm25_scores[k])
+                new_query = rocchio.execute_rocchio(relevant_docs, non_relevant_docs, rocchio_terms)
+
+                similarity = {}
+                for k1, v1 in tf_idf.term_doc_matrix.items():
+                    score = Similarity.cosine_similarity_normalized(new_query, v1)
+                    if score > 0:
+                        similarity.update({k1: score})
+                scores.update({k: similarity})
+
+            print(f'Store TF-IDF + Rocchio scores in {filepath}')
+            pickle.dump(scores, open(filepath, 'wb'))
+            print('Saved.')
+
+    def generate_cosine_glove_doc_doc(self):
+
+        doc_glove_vectors = pickle.load(self.caching.avg_doc_embeddings)
+        filepath = f'{self.folder}doc_doc_glove_scores.pkl'
+
+
+        counter = 1
+        num_q = len(doc_glove_vectors.keys())
+
+        scores = {}
+
+        for doc, vec in doc_glove_vectors.items():
+
+            print(doc, f'{counter} / {num_q}')
+            counter += 1
+
+            similarity = {}
+            for doc1, vec1 in doc_glove_vectors.items():
+                score = Similarity.cosine_similarity_normalized(vec, vec1)
+                if score > 0:
+                    similarity.update({doc1: score})
+            scores.update({doc: similarity})
+
+        print(f'Store Glove scores in {filepath}')
+        pickle.dump(scores, open(filepath, 'wb'))
+        print('Saved.')
+
+    def generate_cosine_glove_rocchio_doc_doc(self, top_k=10, rocchio_terms=5):
+        glove_rocchio_file = f'{self.folder}doc_doc_glove_rocchio.pkl'
+        try:
+            glove_rocchio_docs = open(glove_rocchio_file, 'rb')
+        except FileNotFoundError:
+            # documents with query expansion not yet there
+            # thus, we create them here
+            tf_idf = self.tf_idf
+            print('Create document word embeddings with rocchio...')
+            glove_rocchio_docs = self.caching.create_document_embeddings_rocchio(tf_idf.term_doc_matrix, glove_rocchio_file, top_k=top_k, rocchio_terms=rocchio_terms)
+
+        doc_glove_vectors = pickle.load(self.caching.avg_doc_embeddings)
+        filepath = f'{self.folder}doc_doc_glove_scores.pkl'
+
+        counter = 1
+        num_q = len(glove_rocchio_docs.keys())
+
+        scores = {}
+
+        try:
+            open(filepath, 'rb')
+        except FileNotFoundError:
+            for doc, vec in glove_rocchio_docs.items():
+
+                print(doc, f'{counter} / {num_q}')
+                counter += 1
+
+                similarity = {}
+                for doc1, vec1 in doc_glove_vectors.items():
+                    score = Similarity.cosine_similarity_normalized(vec, vec1)
+                    if score > 0:
+                        similarity.update({doc1: score})
+                scores.update({doc: similarity})
+
+            print(f'Store Glove + Rocchio scores in {filepath}')
+            pickle.dump(scores, open(filepath, 'wb'))
+            print('Saved.')
 
 
 # print('================== Load Data ===================')
-# feature_generator = FeatureGenerator()
+
+feature_generator = FeatureGenerator()
+# feature_generator.generate_bm25_doc_doc()
+
+feature_generator.generate_cosine_tfidf_doc_doc()
+feature_generator.generate_cosine_tfidf_rocchio_doc_doc()
+
+feature_generator.generate_cosine_glove_doc_doc()
+feature_generator.generate_cosine_glove_rocchio_doc_doc()
 # feature_generator.calculate_cosine_semantic_embeddings_query_expansion()
 # feature_generator.calculate_cosine_semantic_embeddings()
 

@@ -199,7 +199,7 @@ class AveragePrecision:
 
         :param name: scores to be evaluated (bm25, tf-idf, ...)
         :param queries: all queries
-        :param true_labels: true labels of query and corresponding doc
+        :param true_labels: dataframe true labels of query and corresponding doc
         :param predicted_scores: predicted relevances
         :param top_k: limit to top relevant document
         :param threshold: minimum score for doc to be considered relevant
@@ -273,7 +273,7 @@ class ReciprocalRank:
 
         :param name: scores to be evaluated (bm25, tf-idf, ...)
         :param queries: all queries
-        :param true_labels: true labels of query and corresponding doc
+        :param true_labels: dataframe true labels of query and corresponding doc
         :param predicted_scores: predicted relevances
         :param top_k: limit to top relevant document
         :param threshold: minimum score for doc to be considered relevant
@@ -341,8 +341,8 @@ class Precision:
         """
 
         :param name: scores to be evaluated (bm25, tf-idf, ...)
-        :param queries: all queries
-        :param true_labels: true labels of query and corresponding doc
+        :param queries: all queries as list
+        :param true_labels: dataframe true labels of query and corresponding doc
         :param predicted_scores: predicted relevances
         :param top_k: limit to top relevant document
         :param threshold: minimum score for doc to be considered relevant
