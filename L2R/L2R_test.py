@@ -73,6 +73,54 @@ LambdaMART_md = 'java -jar L2R/RankLib-2.1-patched.jar ' \
         '-metric2T MAP@10 ' \
         '-save output/LambdaMART_md.txt'
 
+RankBoost_md = 'java -jar L2R/RankLib-2.1-patched.jar ' \
+        '-train input_for_L2R/input_train.txt ' \
+        '-test input_for_L2R/input_test.txt ' \
+        '-ranker 2 ' \
+        '-metric2t MAP@10 ' \
+        '-metric2T MAP@10 ' \
+        '-save output/RankBoost_md.txt'
+
+AdaRank_md = 'java -jar L2R/RankLib-2.1-patched.jar ' \
+        '-train input_for_L2R/input_train.txt ' \
+        '-test input_for_L2R/input_test.txt ' \
+        '-ranker 3 ' \
+        '-metric2t MAP@10 ' \
+        '-metric2T MAP@10 ' \
+        '-save output/AdaRank_md.txt'
+
+RankNet_md = 'java -jar L2R/RankLib-2.1-patched.jar ' \
+        '-train input_for_L2R/input_train.txt ' \
+        '-test input_for_L2R/input_test.txt ' \
+        '-ranker 1 ' \
+        '-metric2t MAP@10 ' \
+        '-metric2T MAP@10 ' \
+        '-save output/RankNet_md.txt'
+
+ListNet_md = 'java -jar L2R/RankLib-2.1-patched.jar ' \
+        '-train input_for_L2R/input_train.txt ' \
+        '-test input_for_L2R/input_test.txt ' \
+        '-ranker 7 ' \
+        '-metric2t MAP@10 ' \
+        '-metric2T MAP@10 ' \
+        '-save output/ListNet_md.txt'
+
+RandomForests_md = 'java -jar L2R/RankLib-2.1-patched.jar ' \
+        '-train input_for_L2R/input_train.txt ' \
+        '-test input_for_L2R/input_test.txt ' \
+        '-ranker 8 ' \
+        '-metric2t MAP@10 ' \
+        '-metric2T MAP@10 ' \
+        '-save output/RandomForests_md.txt'
+
+MART_md = 'java -jar L2R/RankLib-2.1-patched.jar ' \
+        '-train input_for_L2R/input_train.txt ' \
+        '-test input_for_L2R/input_test.txt ' \
+        '-ranker 0 ' \
+        '-metric2t MAP@10 ' \
+        '-metric2T MAP@10 ' \
+        '-save output/MART_md.txt'
+
 # CoordinateAscent_md = 'java -jar L2R/RankLib-2.1-patched.jar ' \
 #         '-train input_for_L2R/input_train.txt ' \
 #         '-test input_for_L2R/input_test.txt ' \
