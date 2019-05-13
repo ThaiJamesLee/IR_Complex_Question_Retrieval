@@ -224,7 +224,7 @@ class Caching:
 
     def create_document_embeddings_rocchio(self, tf_idf, path, top_k=10,rocchio_terms=5):
         """
-
+        Requires the documents_retrieval/doc_doc_bm25_scores.pkl containing docid: docid: score dictionary.
         :param tf_idf: the dictionary q: docid: value
         :param path: path where to save vectors
         :param rocchio_terms: number of terms added to new query
@@ -237,13 +237,13 @@ class Caching:
 
         print('Create embedding vecots for expanded documents...')
         counter = 1
-        num_q = len(self.doc_structure.keys())
-        for q in self.doc_structure.keys():
+        num_q = len(tf_idf.term_doc_matrix.keys())
+        for q in tf_idf.term_doc_matrix.keys():
             print(f'{counter} / {num_q}')
             counter += 1
 
             sum_embedding_vectors = np.zeros(self.vector_dimension)  # create initial empty array
-            tfidf_q = tf_idf[q]
+            tfidf_q = tf_idf.term_doc_matrix[q]
             rocchio = RocchioOptimizeQuery(query_vector=tfidf_q, tf_idf_matrix=tf_idf.term_doc_matrix)
             scores = {}
             try:
