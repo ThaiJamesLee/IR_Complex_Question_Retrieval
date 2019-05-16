@@ -61,13 +61,14 @@ class Metrics:
             queue.put((map, mrr, r_prec))
         return map, mrr, r_prec
 
-    def calculate_standard_metrics(self, predicted):
+    def calculate_standard_metrics(self, predicted, actual):
         """
         Calculates the standard metrics for document classification.
-        :param y_pred:
+        :param predicted: array of predicted label
+        :param actual: array of true label
         :return: acc, P, R, F1
         """
-        m = StandardMatrics(y_pred=predicted, y_true=self.true_labels)
+        m = StandardMatrics(y_pred=predicted, y_true=actual)
         acc = m.calculate_acc()
         p = m.calculate_precision()
         r = m.calculate_recall()
@@ -127,6 +128,14 @@ class Metrics:
 # print(Metrics(top_k=30).excecute_multithreaded(only_actual=True))
 # print(execute_singethreaded())
 
+# actual = np.array([0,0,0,0,0,1,1,1,1,1])
+# predicted = np.array([0,1,1,0,0,1,0,1,1,1])
+# m = Metrics(top_k=20)
+# acc, p, r, f1 = m.calculate_standard_metrics(predicted, actual)
+# print(f"acc:{acc}",
+#       f"percision:{p}",
+#       f"recall:{r}",
+#       f"F1:{f1}")
 
 
 

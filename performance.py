@@ -364,11 +364,11 @@ class StandardMatrics:
     """
     Class for compute standard performance scores
     """
-    def __int__(self, y_pred, y_true):
-        self.TP = sum((y_true == 1) & (y_pred == 1))
-        self.FN = sum((y_true == 1) & (y_pred == 0))
-        self.TN = sum((y_true == 0) & (y_pred == 0))
-        self.FP = sum((y_true == 0) & (y_pred == 1))
+    def __init__(self, y_pred, y_true):
+        self.TP = np.sum((y_true == 1) & (y_pred == 1))
+        self.FN = np.sum((y_true == 1) & (y_pred == 0))
+        self.TN = np.sum((y_true == 0) & (y_pred == 0))
+        self.FP = np.sum((y_true == 0) & (y_pred == 1))
 
     def get_matrix_value(self):
         tp = self.TP
