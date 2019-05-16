@@ -61,6 +61,20 @@ class Metrics:
             queue.put((map, mrr, r_prec))
         return map, mrr, r_prec
 
+    def calculate_standard_metrics(self, predicted):
+        """
+        Calculates the standard metrics for document classification.
+        :param y_pred:
+        :return: acc, P, R, F1
+        """
+        m = StandardMatrics(y_pred=predicted, y_true=self.true_labels)
+        acc = m.calculate_acc()
+        p = m.calculate_precision()
+        r = m.calculate_recall()
+        f1 = m.calculate_f1()
+        return acc, p, r, f1
+
+
     def excecute_multithreaded(self, threshold=0.0, only_actual=False):
         """
         Create batches of tasks. Each batch calculates the R-Prec, MRR, and MAP score.

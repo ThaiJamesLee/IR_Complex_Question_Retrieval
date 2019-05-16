@@ -360,5 +360,44 @@ class Precision:
         print(name, 'R-Prec', r_prec_score)
         return r_prec_score
 
+class StandardMatrics:
+    """
+    Class for compute standard performance scores
+    """
+    def __int__(self, y_pred, y_true):
+        self.TP = sum((y_true == 1) & (y_pred == 1))
+        self.FN = sum((y_true == 1) & (y_pred == 0))
+        self.TN = sum((y_true == 0) & (y_pred == 0))
+        self.FP = sum((y_true == 0) & (y_pred == 1))
 
+    def get_matrix_value(self):
+        tp = self.TP
+        fn = self.FN
+        tn = self.TN
+        fp = self.FP
+        return tp, fn , tn , fp
 
+    def confusion_matrix(self):
+        cm = np.array([[self.TP, self.FP], [self.FN, self.TN]])
+        return cm
+
+    def calculate_acc(self):
+        tp, fn, tn, fp = self.get_matrix_value()
+        acc = (tp + tn) / (tp + tn + fp + fn)
+        return acc
+
+    def calculate_precision(self):
+        tp, fn, tn, fp = self.get_matrix_value()
+        precision = tp / (tp + fp)
+        return precision
+
+    def calculate_recall(self):
+        tp, fn, tn, fp = self.get_matrix_value()
+        recall = tp / (fn + tp)
+        return recall
+
+    def calculate_f1(self):
+        p = self.calculate_precision()
+        r = self.calculate_recall()
+        f1 = (2*p*r) / (p + r)
+        return f1
