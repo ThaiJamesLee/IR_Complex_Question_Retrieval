@@ -16,6 +16,9 @@
 
 import os
 
+input_test_norm = 'input_for_L2R/input_test_norm.txt'
+input_train_norm = 'input_for_L2R/input_train_norm.txt'
+
 # train on the training data and record the model that performs best on the validation data.
 # The training metric is NDCG@10. After training is completed, evaluate the trained model on the test data in ERR@10
 exp_1_1 = 'java -jar L2R/RankLib-2.1-patched.jar ' \
@@ -58,64 +61,64 @@ exp_4_3= 'java -jar L2R/RankLib-2.1-patched.jar -load CoordinateAscent_md.txt -t
 exp_4_4 = 'java -cp RankLib-2.1-patched.jar ciir.umass.edu.eval.Analyzer -all output/ -base baseline.ndcg.txt > analysis.txt'
 
 CoordinateAscent_md = 'java -jar L2R/RankLib-2.1-patched.jar ' \
-        '-train input_for_L2R/input_train.txt ' \
-        '-test input_for_L2R/input_test.txt ' \
+        f'-train {input_train_norm} ' \
+        f'-test {input_test_norm} ' \
         '-ranker 4 ' \
         '-metric2t MAP@10 ' \
         '-metric2T MAP@10 ' \
         '-save output/CoordinateAscent_md.txt'
 
 LambdaMART_md = 'java -jar L2R/RankLib-2.1-patched.jar ' \
-        '-train input_for_L2R/input_train.txt ' \
-        '-test input_for_L2R/input_test.txt ' \
+        f'-train {input_train_norm} ' \
+        f'-test {input_test_norm} ' \
         '-ranker 6 ' \
         '-metric2t MAP@10 ' \
         '-metric2T MAP@10 ' \
         '-save output/LambdaMART_md.txt'
 
 RankBoost_md = 'java -jar L2R/RankLib-2.1-patched.jar ' \
-        '-train input_for_L2R/input_train.txt ' \
-        '-test input_for_L2R/input_test.txt ' \
+        f'-train {input_train_norm} ' \
+        f'-test {input_test_norm} ' \
         '-ranker 2 ' \
         '-metric2t MAP@10 ' \
         '-metric2T MAP@10 ' \
         '-save output/RankBoost_md.txt'
 
 AdaRank_md = 'java -jar L2R/RankLib-2.1-patched.jar ' \
-        '-train input_for_L2R/input_train.txt ' \
-        '-test input_for_L2R/input_test.txt ' \
+        f'-train {input_train_norm} ' \
+        f'-test {input_test_norm} ' \
         '-ranker 3 ' \
         '-metric2t MAP@10 ' \
         '-metric2T MAP@10 ' \
         '-save output/AdaRank_md.txt'
 
 RankNet_md = 'java -jar L2R/RankLib-2.1-patched.jar ' \
-        '-train input_for_L2R/input_train.txt ' \
-        '-test input_for_L2R/input_test.txt ' \
+        f'-train {input_train_norm} ' \
+        f'-test {input_test_norm} ' \
         '-ranker 1 ' \
         '-metric2t MAP@10 ' \
         '-metric2T MAP@10 ' \
         '-save output/RankNet_md.txt'
 
 ListNet_md = 'java -jar L2R/RankLib-2.1-patched.jar ' \
-        '-train input_for_L2R/input_train.txt ' \
-        '-test input_for_L2R/input_test.txt ' \
+        f'-train {input_train_norm} ' \
+        f'-test {input_test_norm} ' \
         '-ranker 7 ' \
         '-metric2t MAP@10 ' \
         '-metric2T MAP@10 ' \
         '-save output/ListNet_md.txt'
 
 RandomForests_md = 'java -jar L2R/RankLib-2.1-patched.jar ' \
-        '-train input_for_L2R/input_train.txt ' \
-        '-test input_for_L2R/input_test.txt ' \
+        f'-train {input_train_norm} ' \
+        f'-test {input_test_norm} ' \
         '-ranker 8 ' \
         '-metric2t MAP@10 ' \
         '-metric2T MAP@10 ' \
         '-save output/RandomForests_md.txt'
 
 MART_md = 'java -jar L2R/RankLib-2.1-patched.jar ' \
-        '-train input_for_L2R/input_train.txt ' \
-        '-test input_for_L2R/input_test.txt ' \
+        f'-train {input_train_norm} ' \
+        f'-test {input_test_norm} ' \
         '-ranker 0 ' \
         '-metric2t MAP@10 ' \
         '-metric2T MAP@10 ' \

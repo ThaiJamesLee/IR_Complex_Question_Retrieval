@@ -141,3 +141,23 @@ class BM25:
             score = self.relevance(doc_id, query)
             scores.update({doc_id: score})
         return scores
+
+    def compute_relevance_on_corpus_list(self, query):
+        """
+
+        computes relevance score for each document, with given query.
+        If the score is 0, then skip.
+        Store the scores in a list
+        :param query: input as string separated by whitespaces
+        :return: dict of {docid: relevance_score, ...}
+        """
+        if type(query) == 'str':
+            query = query.split()
+        elif type(query) != str and type(query) != list:
+            raise Exception('Invalid input. The query must be of type str or list!')
+
+        scores = {}
+        for doc_id in self.documents.keys():
+            score = self.relevance(doc_id, query)
+            scores.update({doc_id: [score, 0, 0, 0, 0]})
+        return scores
