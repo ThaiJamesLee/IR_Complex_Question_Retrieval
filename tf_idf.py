@@ -87,9 +87,14 @@ class TFIDF:
             max_freq = TFIDF.get_max_freq_term(matrix, k)
 
             for word in v:
-                counter = 1+math.log(v[word], 10)
-                denominator = 1+math.log(max_freq, 10)
-                value = counter/denominator
+
+                value = 0
+
+                if v[word] > 0:
+                    
+                    counter = 1+math.log(v[word], 10)
+                    denominator = 1+math.log(max_freq, 10)
+                    value = counter/denominator
                 Utils.add_ele_to_matrix(tf_matrix, k, word, value)
 
         return tf_matrix
