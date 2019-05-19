@@ -353,6 +353,10 @@ class FeatureGenerator:
             print('Saved.')
 
     def generate_cosine_glove_doc_doc(self, file=None):
+        """
+
+        :return:
+        """
         print('Calculate cosine similarites Glove...')
         doc_glove_vectors = pickle.load(open(self.caching.avg_doc_embeddings, 'rb'))
         filepath = f'{self.folder}doc_doc_glove_scores.pkl'
@@ -385,8 +389,8 @@ class FeatureGenerator:
     def generate_cosine_glove_rocchio_doc_doc(self, top_k=10, rocchio_terms=5, file=None):
         """
 
-        :param top_k:
-        :param rocchio_terms:
+        :param top_k: setting for rocchio to consider which bm25 the number of most similar docs
+        :param rocchio_terms: number of terms to add to the new query (in this case document
         :return:
         """
         print('Calculate cosine similarites Glove + Rocchio...')
@@ -435,7 +439,7 @@ class FeatureGenerator:
 
     def generate_scores_doc_doc(self, rocchio_terms=5, top_k=10):
         """
-
+        NOT TESTED!!!
         :param rocchio_terms: number of terms to add to new query if using rocchio
         :param top_k: number of most relevant document for rocchio to consider
         :return:

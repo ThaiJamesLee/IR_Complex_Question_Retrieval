@@ -183,6 +183,7 @@ class Caching:
         print(f'Save expanded query embedding vectors in {file_path}')
         pickle.dump(query_embedding_vector, open(file_path, 'wb'))
         print('Saved.')
+
         return query_embedding_vector
 
     def create_document_embeddings(self, tf_idf):
@@ -202,6 +203,7 @@ class Caching:
             sum_weight = 0
             sum_embedding_vectors = np.zeros(self.vector_dimension)
             number_terms = len(terms.keys())
+
             if number_terms > 0:
                 for term in terms.keys():
                     try:
@@ -238,6 +240,7 @@ class Caching:
         print('Create embedding vecots for expanded documents...')
         counter = 1
         num_q = len(tf_idf.term_doc_matrix.keys())
+
         for q in tf_idf.term_doc_matrix.keys():
             print(f'{counter} / {num_q}')
             counter += 1
@@ -246,6 +249,7 @@ class Caching:
             tfidf_q = tf_idf.term_doc_matrix[q]
             rocchio = RocchioOptimizeQuery(query_vector=tfidf_q, tf_idf_matrix=tf_idf.term_doc_matrix)
             scores = {}
+
             try:
                 scores = bm25_scores[q]
             except KeyError:
@@ -274,9 +278,8 @@ class Caching:
         print(f'Save expanded document embedding vectors in {path}')
         pickle.dump(document_embedding_vectors, open(path, 'wb'))
         print('Saved.')
+
         return document_embedding_vectors
-
-
 
     @staticmethod
     def clear_cache():

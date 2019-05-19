@@ -8,7 +8,7 @@ __author__ = 'Duc Tai Ly'
 
 class BM25:
 
-    def __init__(self, documents, b=None, k=None):
+    def __init__(self, documents, b=0.75, k=1.2):
         """
 
         see: https://www.researchgate.net/publication/220613776_The_Probabilistic_Relevance_Framework_BM25_and_Beyond
@@ -20,14 +20,9 @@ class BM25:
         self.cache = dict()
         self.num_docs = len(self.documents.keys())
         self.avg_doc_len = self.get_average_doc_length()
-        if b is None:
-            self.b = 0.75
-        else:
-            self.b = b
-        if k is None:
-            self.k = 1.2
-        else:
-            self.k = k
+
+        self.b = b
+        self.k = k
 
     def get_doc_length(self, doc_id):
         """
@@ -46,6 +41,7 @@ class BM25:
 
         for k, v in self.documents.items():
             num_items = num_items + len(v)
+
         return num_items / num_docs
 
     def get_term_frequency_in_doc(self, term, doc_id):
@@ -94,6 +90,7 @@ class BM25:
             df = self.cache[term]
 
         idf = math.log(1 + (self.num_docs - df + 0.5)/(df + 0.5))
+
         return idf
 
     def relevance(self, doc_id, query):
@@ -121,6 +118,7 @@ class BM25:
                 # relevance score of term in current document
                 term_score = idf * counter/denominator
                 score = score + term_score
+
         return score
 
     def compute_relevance_on_corpus(self, query):
@@ -140,6 +138,7 @@ class BM25:
         for doc_id in self.documents.keys():
             score = self.relevance(doc_id, query)
             scores.update({doc_id: score})
+
         return scores
 
     def compute_relevance_on_corpus_list(self, query):
@@ -160,4 +159,5 @@ class BM25:
         for doc_id in self.documents.keys():
             score = self.relevance(doc_id, query)
             scores.update({doc_id: [score, 0, 0, 0, 0]})
+
         return scores
