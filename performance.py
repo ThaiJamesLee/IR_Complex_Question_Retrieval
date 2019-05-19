@@ -364,11 +364,58 @@ class StandardMatrics:
     """
     Class for compute standard performance scores
     """
-    def __init__(self, y_pred, y_true):
-        self.TP = np.sum((y_true == 1) & (y_pred == 1))
-        self.FN = np.sum((y_true == 1) & (y_pred == 0))
-        self.TN = np.sum((y_true == 0) & (y_pred == 0))
-        self.FP = np.sum((y_true == 0) & (y_pred == 1))
+    def __init__(self, y_pred, y_true, threshold=0):
+        self.threshold = threshold
+        self.y_pred = y_pred
+        self.y_true = y_true
+        self.TP = self.get_tp()
+        self.FN = self.get_fn()
+        self.TN = self.get_tn()
+        self.FP = self.get_fp()
+
+    def get_tp(self):
+        tp = 0
+        for k, v in self.y_true.items():
+            for i in v[0]:
+                try:
+                    if i in self.y_pred[k] and self.y_pred[k][i] > self.threshold:
+                        tp = tp + 1
+                except KeyError:
+                    pass
+        return tp
+
+    def get_fn(self):
+        fn = 0
+        for k, v in self.y_true.items():
+            for i in v[0]:
+                try:
+                    if i in self.y_pred[k] and self.y_pred[k][i] <= self.threshold:
+                        fn = fn + 1
+                except KeyError:
+                    pass
+        return fn
+
+    def get_fp(self):
+        fp = 0
+        for k, v in self.y_pred.items():
+            for i in list(v.keys()):
+                try:
+                    if i not in self.y_true[k] and self.y_pred[k][i] > self.threshold:
+                        fp = fp + 1
+                except KeyError:
+                    pass
+        return fp
+
+    def get_tn(self):
+        tn = 0
+        for k, v in self.y_pred.items():
+            for i in list(v.keys()):
+                try:
+                    if i not in self.y_true[k] and self.y_pred[k][i] <= self.threshold:
+                        tn = tn + 1
+                except KeyError:
+                    pass
+        return tn
 
     def get_matrix_value(self):
         tp = self.TP

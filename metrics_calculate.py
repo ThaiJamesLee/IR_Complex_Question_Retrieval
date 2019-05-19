@@ -61,20 +61,6 @@ class Metrics:
             queue.put((map, mrr, r_prec))
         return map, mrr, r_prec
 
-    def calculate_standard_metrics(self, predicted, actual):
-        """
-        Calculates the standard metrics for document classification.
-        :param predicted: array of predicted label
-        :param actual: array of true label
-        :return: acc, P, R, F1
-        """
-        m = StandardMatrics(y_pred=predicted, y_true=actual)
-        acc = m.calculate_acc()
-        p = m.calculate_precision()
-        r = m.calculate_recall()
-        f1 = m.calculate_f1()
-        return acc, p, r, f1
-
 
     def excecute_multithreaded(self, threshold=0.0, only_actual=False):
         """
@@ -122,20 +108,44 @@ class Metrics:
         map = AveragePrecision().calculate_map(name, self.queries, self.true_labels, self.bm25_scores, self.top_k, threshold=threshold, only_actual=only_actual)
         return map
 
+class Standard:
+    def __init__(self):
+        print('Load doc_doc data')
+        pass
+
+    def calculate_standard_metrics(self, predicted, actual):
+        """
+        Calculates the standard metrics for document classification.
+        :param predicted: array of predicted label
+        :param actual: array of true label
+        :return: acc, P, R, F1
+        """
+        m = StandardMatrics(y_pred=predicted, y_true=actual)
+        acc = m.calculate_acc()
+        p = m.calculate_precision()
+        r = m.calculate_recall()
+        f1 = m.calculate_f1()
+        # tp, fn, tn, fp = m.get_matrix_value()
+        # print(f"tp:{tp}",
+        #       f"fn:{fn}",
+        #       f"tn:{tn}",
+        #       f"fp:{fp}")
+        return acc, p, r, f1
 
 # m = Metrics(top_k=20)
 # print(m.calculate_map_bm25('BM25'))
 # print(Metrics(top_k=30).excecute_multithreaded(only_actual=True))
 # print(execute_singethreaded())
 
-# actual = np.array([0,0,0,0,0,1,1,1,1,1])
-# predicted = np.array([0,1,1,0,0,1,0,1,1,1])
-# m = Metrics(top_k=20)
-# acc, p, r, f1 = m.calculate_standard_metrics(predicted, actual)
-# print(f"acc:{acc}",
-#       f"percision:{p}",
-#       f"recall:{r}",
-#       f"F1:{f1}")
+actual = pickle.load(open('documents_retrieval/doc_rel.pkl', 'rb'))
+predicted = pickle.load(open('documents_retrieval/doc_doc_glove_scores.pkl', 'rb'))
+
+m = Standard()
+acc, p, r, f1 = m.calculate_standard_metrics(predicted, actual)
+print(f"acc:{acc}"'\n'
+      f"percision:{p}"'\n'
+      f"recall:{r}"'\n'
+      f"F1:{f1}")
 
 
 
