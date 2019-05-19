@@ -410,7 +410,7 @@ class FeatureGenerator:
             glove_rocchio_docs = pickle.load(open(glove_rocchio_file, 'rb'))
 
         doc_glove_vectors = pickle.load(open(self.caching.avg_doc_embeddings, 'rb'))
-        filepath = f'{self.folder}doc_doc_glove_rocchio_scores{rocchio_terms}.pkl'
+        filepath = f'{self.folder}doc_doc_glove_rocchio_scores_{rocchio_terms}.pkl'
 
         counter = 1
         num_q = len(glove_rocchio_docs.keys())
@@ -568,9 +568,12 @@ feature_generator.generate_cosine_tfidf_rocchio_doc_doc()
 feature_generator.generate_cosine_glove_doc_doc()
 feature_generator.generate_cosine_glove_rocchio_doc_doc()
 """
-feature_generator = FeatureGenerator()
+# feature_generator = FeatureGenerator()
+# feature_generator.generate_cosine_glove_rocchio_doc_doc()
+# feature_generator.generate_cosine_tfidf_doc_doc()
+# feature_generator.generate_cosine_tfidf_rocchio_doc_doc()
 # feature_generator.generate_cosine_glove_doc_doc()
-feature_generator.generate_scores_doc_doc()
+# feature_generator.generate_scores_doc_doc()
 
 # feature_generator.calculate_cosine_semantic_embeddings_query_expansion()
 # feature_generator.calculate_cosine_semantic_embeddings()
