@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-1. process paragraph collection, query and page(structure) data
-2. make train-test dataset
-3. data store in file 'processed data', use pickle.load(open(path, 'rb')) to load data
+
 @author wanting lin
 """
 
@@ -20,11 +18,22 @@ from nltk.stem import WordNetLemmatizer
 
 
 class Preprocess(object):
-
+    """
+    1. process paragraph collection, query and page(structure) data
+    2. Make training data: 1. L2R:train-test dataset 2. Doc to doc relevance
+    3. Data store in file 'processed data', use pickle.load(open(path, 'rb')) to load data
+    Example of initial a new dataset
+    obj = Preprocess('lemma', 'test200-train/train.pages.cbor-paragraphs.cbor',
+                     "test200-train//train.pages.cbor",
+                     "test200-train/train.pages.cbor-toplevel.qrels",
+                     "test200-train/train.pages.cbor-hierarchical.qrels",
+                     "test200-train/train.pages.cbor-article.qrels")
+    """
     def __init__(self, process_type, para_path, page_path, *query_path):
         """ get data and structure from file
         Parameters
         ----------
+        process_type(str): stem or lemma
         para_path(str): paragraph collection input file path
         page_path(str): page file input file path
         query_path(str, optional): query file input file path
@@ -46,6 +55,7 @@ class Preprocess(object):
         test(dataframe): query(raw), q0, docid, rel
         process_train(dataframe): query(processed), q0, docid, rel
         process_test(dataframe): query(processed), q0, docid, rel
+        doc_rel(dict{docid:[relevant docid]})
         """
         self.paragraphs, self.paragraph_ids, self.documents = Preprocess.load_paragraph(para_path, process_type)
         self.y_true, self.raw_query, self.processed_query = Preprocess.load_query(process_type, *query_path)
@@ -62,6 +72,7 @@ class Preprocess(object):
         self.process_test = Preprocess.process_query_in_test(self.test, self.raw_query, self.processed_query)
         pickle.dump(self.process_train, open('process_data/process_train.pkl', 'wb'))
         pickle.dump(self.process_test, open('process_data/process_test.pkl', 'wb'))
+        self.doc_rel = Preprocess.create_doc_relevance(self.section_paragraph)
 
     @staticmethod
     def preprocess(process_type, docs):
@@ -96,7 +107,7 @@ class Preprocess(object):
                         if (i != " ") & (i not in stopword) & (not i.isdigit()) & (i not in new_punctuation)
                     ]
                 ))
-        print(f'finish preprocess...')
+        print(f'finish {process_type} preprocessing')
         return processed_doc
 
     @classmethod
@@ -318,10 +329,16 @@ class Preprocess(object):
             process_df.loc[df['query'] == q, 'query'] = value
         return process_df
 
-"""
-obj = Preprocess('lemma', 'test200-train/train.pages.cbor-paragraphs.cbor',
-                 "test200-train//train.pages.cbor",
-                 "test200-train/train.pages.cbor-toplevel.qrels",
-                 "test200-train/train.pages.cbor-hierarchical.qrels",
-                 "test200-train/train.pages.cbor-article.qrels")
-"""
+    @classmethod
+    def create_doc_relevance(cls, section_paragraph):
+        # print(section_paragraph)
+        doc_rel = {}
+        for k, v in section_paragraph.items():
+            for doc in v:
+                if doc_rel.get(doc) is None:
+                    doc_rel.update({doc: [v]})
+                else:
+                    doc_rel[doc].append(v)
+        pickle.dump(doc_rel, open('documents_retrieval/doc_rel.pkl', 'wb'))
+        return doc_rel
+
