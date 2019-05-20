@@ -85,6 +85,9 @@ class Caching:
     def create_doc_terms(self):
         return Utils.get_document_term_from_data(self.test, self.paragraph_ids, self.corpus)
 
+    def create_doc_terms_as_string(self):
+        return Utils.get_document_term_from_data_as_string(self.test, self.paragraph_ids, self.corpus)
+
     def create_query_embeddings(self, tf_idf):
         """
         create cache for query average word embedding vector

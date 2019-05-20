@@ -152,8 +152,23 @@ class Utils:
 
     @staticmethod
     def get_document_term_from_data(df, corpus_ids, corpus):
+        """
+
+        :param df: a dataframe containing docids
+        :param corpus_ids:
+        :param corpus:
+        :return:
+        """
         unique_docid = set(df['docid'])
         unique_docs = [(docid, corpus[corpus_ids.index(docid)].split()) for docid in unique_docid]
+        return unique_docs
+
+    @staticmethod
+    def get_document_term_from_data_as_string(df, corpus_ids, corpus):
+        unique_docid = set(df['docid'])
+        unique_docs = dict()
+        for docid in unique_docid:
+            unique_docs.update({docid: corpus[corpus_ids.index(docid)]})
         return unique_docs
 
     @staticmethod
