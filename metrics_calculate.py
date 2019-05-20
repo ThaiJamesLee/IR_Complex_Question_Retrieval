@@ -109,7 +109,7 @@ class Metrics:
         return map
 
 class Standard:
-    def __init__(self, top_k=20):
+    def __init__(self, top_k=20, only_actual=True):
         print('load doc_doc data...')
 
         self.true_label = pickle.load(open('documents_retrieval/doc_rel.pkl', 'rb'))
@@ -118,14 +118,18 @@ class Standard:
         self.glove_rocchio = pickle.load(open('documents_retrieval/doc_doc_glove_rocchio_scores_5.pkl', 'rb'))
         self.tfidf = pickle.load(open('documents_retrieval/doc_doc_tfidf_scores.pkl', 'rb'))
         self.tfidf_rocchio = pickle.load(open('documents_retrieval/doc_doc_tfidf_rocchio_scores_5.pkl', 'rb'))
+
         self.top_k = top_k
-        print('Set documents top_k to', top_k)
+        self.only_actual = only_actual
+        if only_actual is True:
+            print('only_actual: True')
+        else:
+            print('Set documents top_k to', top_k)
 
         self.batches = {'BM25': self.bm25, 'TF-IDF': self.tfidf, 'TF-IDF + Roccio': self.tfidf_rocchio, 'GloVe': self.glove, 'GloVe + Rocchio': self.glove_rocchio}
 
-    def filter_predict_by_top_k(self, scores, top_k =100):
+    def filter_predict_by_top_k(self, scores, top_k =20):
         """
-
         :param scores: dict of key, value{docid:socre, ..} pairs
         :param top_k: top_k has default value of 100
         :return: filtered dict of top_k best scores
@@ -143,17 +147,43 @@ class Standard:
             filtered_pred.update({k: filtered})
         return filtered_pred
 
-    def calculate_standard_metrics(self, name, scores, queue, threshold, only_actual=False):
+    def filter_predict_by_actual(self, scores):
+        """
+
+        :param scores: dict of key, value{docid:socre, ..} pairs
+        :return: retrieve top n scores of predicted docids, where n equal to number of true_label
+                 e.g. if true label d1 contains 2 rel docs, then retrieve 2 highest docs in predicts.
+        """
+
+        filtered_pred = {}
+        for k, v in scores.items():
+            filtered = {}
+            index = 0
+            for w in sorted(v, key=v.get, reverse=True):
+                try:
+                    if index < len(self.true_label[k][0]):
+                        filtered.update({w: v[w]})
+                        index += 1
+                    else:
+                        break
+                except KeyError:
+                    pass
+            filtered_pred.update({k: filtered})
+        return filtered_pred
+
+    def calculate_standard_metrics(self, name, scores, queue, threshold=0):
         """
         Calculates the standard metrics for document classification.
-        :param predicted: array of predicted label
-        :param actual: array of true label
+        :param name: name of scores, e.g. 'BM25', 'TF-IDF'
+        :param scores: dicts of predicted scores, {docid:{{docid:value, ...}}...}
+        :param queue:
+        :param threshold:
         :return: acc, P, R, F1
         """
-        if only_actual is False:
-            y_pred = self.filter_predict_by_top_k(scores=scores, top_k=self.top_k)
+        if self.only_actual is True:
+            y_pred = self.filter_predict_by_actual(scores=scores)
         else :
-            y_pred = scores
+            y_pred = self.filter_predict_by_top_k(scores=scores, top_k=self.top_k)
 
         m = StandardMatrics(y_pred=y_pred, y_true=self.true_label, threshold=threshold)
         tp, fn, tn, fp = m.get_matrix_value()
@@ -165,9 +195,9 @@ class Standard:
             queue.put((acc, p, r, f1))
         return acc, p, r, f1
 
-    def excecute_stand_multithreaded(self, threshold=0.0, only_actual=False):
+    def excecute_stand_multithreaded(self, threshold=0.0):
         """
-        Create batches of tasks. Each batch calculates the R-Prec, MRR, and MAP score.
+        Create batches of tasks. Each batch calculates the Precision, Recall, and F1 score.
         :return:
         """
         score_queue = Queue()
@@ -176,7 +206,7 @@ class Standard:
 
         try:
             for k, v in self.batches.items():
-                t = Thread(target=self.calculate_standard_metrics, args=(k, v, score_queue, threshold, only_actual))
+                t = Thread(target=self.calculate_standard_metrics, args=(k, v, score_queue, threshold))
                 threads.append(t)
                 t.start()
 
@@ -189,18 +219,18 @@ class Standard:
             print("Error: unable to start thread")
         return scores
 
-    def calculate_stand_bm25(self, name, threshold=0.0, only_actual=False):
+    def calculate_stand_bm25(self, name, threshold=0.0):
         """
-        Used for some testing.
+        Used for bm25 testing.
         :param name:
         :param threshold:
         :param only_actual:
         :return:
         """
-        if only_actual is False:
+        if self.only_actual is False:
             y_pred = self.filter_predict_by_top_k(scores=self.bm25, top_k=self.top_k)
         else :
-            y_pred = self.bm25
+            y_pred = self.filter_predict_by_actual(scores=self.bm25)
 
         print('threshold:', threshold)
         m = StandardMatrics(y_pred=y_pred, y_true=self.true_label, threshold=threshold)
@@ -211,18 +241,18 @@ class Standard:
         f1 = m.calculate_f1(name)
         return acc, p, r, f1
 
-    def calculate_stand_tfidf(self, name, threshold=0.0, only_actual=False):
+    def calculate_stand_tfidf(self, name, threshold=0.0):
         """
-        Used for some testing.
+        Used for tf-idf testing.
         :param name:
         :param threshold:
         :param only_actual:
         :return:
         """
-        if only_actual is False:
+        if self.only_actual is False:
             y_pred = self.filter_predict_by_top_k(scores=self.tfidf, top_k=self.top_k)
         else :
-            y_pred = self.tfidf
+            y_pred = self.filter_predict_by_actual(scores=self.tfidf)
 
         print('threshold:', threshold)
         m = StandardMatrics(y_pred=y_pred, y_true=self.true_label, threshold=threshold)
@@ -233,18 +263,19 @@ class Standard:
         f1 = m.calculate_f1(name)
         return acc, p, r, f1
 
-    def calculate_stand_glove(self, name, threshold=0.0, only_actual=False):
+    def calculate_stand_glove(self, name, threshold=0.0):
         """
-        Used for some testing.
+        Used for glove testing.
         :param name:
         :param threshold:
         :param only_actual:
         :return:
         """
-        if only_actual is False:
+        if self.only_actual is False:
             y_pred = self.filter_predict_by_top_k(scores=self.glove, top_k=self.top_k)
         else :
-            y_pred = self.glove
+            y_pred = self.filter_predict_by_actual(scores=self.glove)
+
         print('threshold:', threshold)
         m = StandardMatrics(y_pred=y_pred, y_true=self.true_label, threshold=threshold)
         tp, fn, tn, fp = m.get_matrix_value()
@@ -260,18 +291,28 @@ class Standard:
 # print(execute_singethreaded())
 
 
-m = Standard(top_k=20)
+m = Standard(only_actual=False)
 # run all scores with same threshold..
-# print(m.excecute_stand_multithreaded(threshold=0.5, only_actual=False))
+# print(m.excecute_stand_multithreaded(threshold=0))
 
 # tune bm25 threshold ..
-print(m.calculate_stand_bm25('BM25',threshold=100, only_actual=True))
-print(m.calculate_stand_bm25('BM25',threshold=100, only_actual=False))
+# print(m.calculate_stand_bm25('BM25',threshold=100, only_actual=True))
+# print(m.calculate_stand_bm25('BM25',threshold=5, only_actual=False))
 
 # # tune tf-idf threshold..
 # print(m.calculate_stand_tfidf('TF-IDF',threshold=0.0))
-# print(m.calculate_stand_tfidf('TF-IDF',threshold=0.5))
+print(m.calculate_stand_tfidf('TF-IDF',threshold=0.1))
+print(m.calculate_stand_tfidf('TF-IDF',threshold=0.2))
+print(m.calculate_stand_tfidf('TF-IDF',threshold=0.3))
+print(m.calculate_stand_tfidf('TF-IDF',threshold=0.4))
+print(m.calculate_stand_tfidf('TF-IDF',threshold=0.5))
+
+
+
 #
 # # tune glove threshold..
-# print(m.calculate_stand_glove('GloVe',threshold=0.0))
-# print(m.calculate_stand_glove('GloVe',threshold=0.5))
+print(m.calculate_stand_glove('GloVe',threshold=0.1))
+print(m.calculate_stand_glove('GloVe',threshold=0.2))
+print(m.calculate_stand_glove('GloVe',threshold=0.3))
+print(m.calculate_stand_glove('GloVe',threshold=0.4))
+print(m.calculate_stand_glove('GloVe',threshold=0.5))
