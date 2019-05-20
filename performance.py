@@ -428,23 +428,27 @@ class StandardMatrics:
         cm = np.array([[self.TP, self.FP], [self.FN, self.TN]])
         return cm
 
-    def calculate_acc(self):
+    def calculate_acc(self, name):
         tp, fn, tn, fp = self.get_matrix_value()
         acc = (tp + tn) / (tp + tn + fp + fn)
+        print(name, 'accuracy:', acc)
         return acc
 
-    def calculate_precision(self):
+    def calculate_precision(self, name):
         tp, fn, tn, fp = self.get_matrix_value()
         precision = tp / (tp + fp)
+        print(name, 'Precision:', precision)
         return precision
 
-    def calculate_recall(self):
+    def calculate_recall(self, name):
         tp, fn, tn, fp = self.get_matrix_value()
         recall = tp / (fn + tp)
+        print(name, 'Recall:', recall)
         return recall
 
-    def calculate_f1(self):
-        p = self.calculate_precision()
-        r = self.calculate_recall()
+    def calculate_f1(self, name):
+        p = self.calculate_precision(name)
+        r = self.calculate_recall(name)
         f1 = (2*p*r) / (p + r)
+        print(name, 'F1:', f1)
         return f1

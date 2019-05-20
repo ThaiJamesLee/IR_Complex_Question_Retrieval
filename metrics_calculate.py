@@ -110,42 +110,69 @@ class Metrics:
 
 class Standard:
     def __init__(self):
-        print('Load doc_doc data')
-        pass
+        print('load doc_doc data...')
 
-    def calculate_standard_metrics(self, predicted, actual):
+        self.true_label = pickle.load(open('documents_retrieval/doc_rel.pkl', 'rb'))
+        self.bm25 = pickle.load(open('documents_retrieval/doc_doc_bm25_scores.pkl', 'rb'))
+        self.glove = pickle.load(open('documents_retrieval/doc_doc_glove_scores.pkl', 'rb'))
+        self.glove_rocchio = pickle.load(open('documents_retrieval/doc_doc_glove_rocchio_scores_5.pkl', 'rb'))
+        self.tfidf = pickle.load(open('documents_retrieval/doc_doc_tfidf_scores.pkl', 'rb'))
+        self.tfidf_rocchio = pickle.load(open('documents_retrieval/doc_doc_tfidf_rocchio_scores_5.pkl', 'rb'))
+
+        self.batches = {'BM25': self.bm25, 'TF-IDF': self.tfidf, 'TF-IDF + Roccio': self.tfidf_rocchio, 'GloVe': self.glove, 'GloVe + Rocchio': self.glove_rocchio}
+
+
+    def calculate_standard_metrics(self, name, scores, queue, threshold):
         """
         Calculates the standard metrics for document classification.
         :param predicted: array of predicted label
         :param actual: array of true label
         :return: acc, P, R, F1
         """
-        m = StandardMatrics(y_pred=predicted, y_true=actual)
-        acc = m.calculate_acc()
-        p = m.calculate_precision()
-        r = m.calculate_recall()
-        f1 = m.calculate_f1()
+        m = StandardMatrics(y_pred=scores, y_true=self.true_label, threshold=threshold)
+        acc = m.calculate_acc(name)
+        p = m.calculate_precision(name)
+        r = m.calculate_recall(name)
+        f1 = m.calculate_f1(name)
         # tp, fn, tn, fp = m.get_matrix_value()
         # print(f"tp:{tp}",
         #       f"fn:{fn}",
         #       f"tn:{tn}",
         #       f"fp:{fp}")
+        if queue is not None:
+            queue.put((acc, p, r, f1))
         return acc, p, r, f1
+
+    def excecute_stand_multithreaded(self, threshold=0.0):
+        """
+        Create batches of tasks. Each batch calculates the R-Prec, MRR, and MAP score.
+        :return:
+        """
+        score_queue = Queue()
+        scores = []
+        threads = []
+
+        try:
+            for k, v in self.batches.items():
+                t = Thread(target=self.calculate_standard_metrics, args=(k, v, score_queue, threshold))
+                threads.append(t)
+                t.start()
+
+            for t in threads:
+                t.join()
+
+            while not score_queue.empty():
+                scores.append(score_queue.get())
+        except:
+            print("Error: unable to start thread")
+        return scores
 
 # m = Metrics(top_k=20)
 # print(m.calculate_map_bm25('BM25'))
 # print(Metrics(top_k=30).excecute_multithreaded(only_actual=True))
 # print(execute_singethreaded())
 
-actual = pickle.load(open('documents_retrieval/doc_rel.pkl', 'rb'))
-predicted = pickle.load(open('documents_retrieval/doc_doc_glove_scores.pkl', 'rb'))
-
 m = Standard()
-acc, p, r, f1 = m.calculate_standard_metrics(predicted, actual)
-print(f"acc:{acc}"'\n'
-      f"percision:{p}"'\n'
-      f"recall:{r}"'\n'
-      f"F1:{f1}")
-
+print(m.excecute_stand_multithreaded())
 
 
