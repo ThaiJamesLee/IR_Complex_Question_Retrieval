@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-
-@author wanting lin
-"""
+__author__ = 'Wanting Lin'
 
 import pandas as pd
 import random
