@@ -422,6 +422,10 @@ class StandardMatrics:
         fn = self.FN
         tn = self.TN
         fp = self.FP
+        print(f"tp:{tp}",
+              f"fn:{fn}",
+              f"tn:{tn}",
+              f"fp:{fp}")
         return tp, fn , tn , fp
 
     def confusion_matrix(self):
@@ -429,26 +433,23 @@ class StandardMatrics:
         return cm
 
     def calculate_acc(self, name):
-        tp, fn, tn, fp = self.get_matrix_value()
-        acc = (tp + tn) / (tp + tn + fp + fn)
+        acc = (self.TP + self.TN) / (self.TP + self.TN + self.FP + self.FN)
         print(name, 'accuracy:', acc)
         return acc
 
     def calculate_precision(self, name):
-        tp, fn, tn, fp = self.get_matrix_value()
-        precision = tp / (tp + fp)
+        precision = self.TP / (self.TP + self.FP)
         print(name, 'Precision:', precision)
         return precision
 
     def calculate_recall(self, name):
-        tp, fn, tn, fp = self.get_matrix_value()
-        recall = tp / (fn + tp)
+        recall = self.TP / (self.FN + self.TP)
         print(name, 'Recall:', recall)
         return recall
 
     def calculate_f1(self, name):
-        p = self.calculate_precision(name)
-        r = self.calculate_recall(name)
+        p = self.TP / (self.TP + self.FP)
+        r = self.TP / (self.FN + self.TP)
         f1 = (2*p*r) / (p + r)
         print(name, 'F1:', f1)
         return f1

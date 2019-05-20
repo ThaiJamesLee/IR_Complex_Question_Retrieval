@@ -130,15 +130,11 @@ class Standard:
         :return: acc, P, R, F1
         """
         m = StandardMatrics(y_pred=scores, y_true=self.true_label, threshold=threshold)
+        tp, fn, tn, fp = m.get_matrix_value()
         acc = m.calculate_acc(name)
         p = m.calculate_precision(name)
         r = m.calculate_recall(name)
         f1 = m.calculate_f1(name)
-        # tp, fn, tn, fp = m.get_matrix_value()
-        # print(f"tp:{tp}",
-        #       f"fn:{fn}",
-        #       f"tn:{tn}",
-        #       f"fp:{fp}")
         if queue is not None:
             queue.put((acc, p, r, f1))
         return acc, p, r, f1
@@ -167,12 +163,75 @@ class Standard:
             print("Error: unable to start thread")
         return scores
 
+    def calculate_stand_bm25(self, name, threshold=0.0):
+        """
+        Used for some testing.
+        :param name:
+        :param threshold:
+        :param only_actual:
+        :return:
+        """
+        print('threshold:', threshold)
+        m = StandardMatrics(y_pred=self.bm25, y_true=self.true_label, threshold=threshold)
+        tp, fn, tn, fp = m.get_matrix_value()
+        acc = m.calculate_acc(name)
+        p = m.calculate_precision(name)
+        r = m.calculate_recall(name)
+        f1 = m.calculate_f1(name)
+        return acc, p, r, f1
+
+    def calculate_stand_tfidf(self, name, threshold=0.0):
+        """
+        Used for some testing.
+        :param name:
+        :param threshold:
+        :param only_actual:
+        :return:
+        """
+        print('threshold:', threshold)
+        m = StandardMatrics(y_pred=self.tfidf, y_true=self.true_label, threshold=threshold)
+        tp, fn, tn, fp = m.get_matrix_value()
+        acc = m.calculate_acc(name)
+        p = m.calculate_precision(name)
+        r = m.calculate_recall(name)
+        f1 = m.calculate_f1(name)
+        return acc, p, r, f1
+
+    def calculate_stand_glove(self, name, threshold=0.0):
+        """
+        Used for some testing.
+        :param name:
+        :param threshold:
+        :param only_actual:
+        :return:
+        """
+        print('threshold:', threshold)
+        m = StandardMatrics(y_pred=self.glove, y_true=self.true_label, threshold=threshold)
+        tp, fn, tn, fp = m.get_matrix_value()
+        acc = m.calculate_acc(name)
+        p = m.calculate_precision(name)
+        r = m.calculate_recall(name)
+        f1 = m.calculate_f1(name)
+        return acc, p, r, f1
+
 # m = Metrics(top_k=20)
 # print(m.calculate_map_bm25('BM25'))
 # print(Metrics(top_k=30).excecute_multithreaded(only_actual=True))
 # print(execute_singethreaded())
 
+
 m = Standard()
-print(m.excecute_stand_multithreaded())
+# run all scores with same threshold..
+# print(m.excecute_stand_multithreaded())
 
+# tune bm25 threshold ..
+print(m.calculate_stand_bm25('BM25',threshold=0))
+print(m.calculate_stand_bm25('BM25',threshold=10))
 
+# tune tf-idf threshold..
+print(m.calculate_stand_tfidf('TF-IDF',threshold=0.0))
+print(m.calculate_stand_tfidf('TF-IDF',threshold=0.5))
+
+# tune glove threshold..
+print(m.calculate_stand_glove('GloVe',threshold=0.0))
+print(m.calculate_stand_glove('GloVe',threshold=0.5))
