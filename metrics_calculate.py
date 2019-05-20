@@ -112,7 +112,9 @@ class Standard:
     def __init__(self, top_k=20, only_actual=True):
         print('load doc_doc data...')
 
-        self.true_label = pickle.load(open('documents_retrieval/doc_rel.pkl', 'rb'))
+        self.origin_true_label = pickle.load(open('documents_retrieval/doc_rel.pkl', 'rb'))
+        self.true_label = {k: [[item for item in v[0] if item != k]] for k, v in self.origin_true_label.items()}
+
         self.bm25 = pickle.load(open('documents_retrieval/doc_doc_bm25_scores.pkl', 'rb'))
         self.glove = pickle.load(open('documents_retrieval/doc_doc_glove_scores.pkl', 'rb'))
         self.glove_rocchio = pickle.load(open('documents_retrieval/doc_doc_glove_rocchio_scores_5.pkl', 'rb'))

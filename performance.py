@@ -370,15 +370,15 @@ class StandardMatrics:
         self.y_true = y_true
         self.TP = self.get_tp()
         self.FN = self.get_fn()
-        self.TN = self.get_tn()
         self.FP = self.get_fp()
+        self.TN = self.get_tn()
 
     def get_tp(self):
         tp = 0
         for k, v in self.y_true.items():
             for i in v[0]:
                 try:
-                    if i in self.y_pred[k] and self.y_pred[k][i] > self.threshold:
+                    if i in self.y_pred[k]:
                         tp = tp + 1
                 except KeyError:
                     pass
@@ -389,7 +389,7 @@ class StandardMatrics:
         for k, v in self.y_true.items():
             for i in v[0]:
                 try:
-                    if i in self.y_pred[k] and self.y_pred[k][i] <= self.threshold:
+                    if i not in self.y_pred[k]:
                         fn = fn + 1
                 except KeyError:
                     pass
@@ -400,21 +400,22 @@ class StandardMatrics:
         for k, v in self.y_pred.items():
             for i in list(v.keys()):
                 try:
-                    if i not in self.y_true[k][0] and self.y_pred[k][i] > self.threshold:
+                    if i not in self.y_true[k][0]:
                         fp = fp + 1
                 except KeyError:
                     pass
         return fp
 
     def get_tn(self):
-        tn = 0
-        for k, v in self.y_pred.items():
-            for i in list(v.keys()):
-                try:
-                    if i not in self.y_true[k][0] and self.y_pred[k][i] <= self.threshold:
-                        tn = tn + 1
-                except KeyError:
-                    pass
+        # tn = 0
+        # for k, v in self.y_pred.items():
+        #     for i in list(v.keys()):
+        #         try:
+        #             if i not in self.y_true[k][0]:
+        #                 tn = tn + 1
+        #         except KeyError:
+        #             pass
+        tn = (4055*4055)-self.TP-self.FP-self.FN
         return tn
 
     def get_matrix_value(self):
