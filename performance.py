@@ -400,7 +400,7 @@ class StandardMatrics:
         for k, v in self.y_pred.items():
             for i in list(v.keys()):
                 try:
-                    if i not in self.y_true[k] and self.y_pred[k][i] > self.threshold:
+                    if i not in self.y_true[k][0] and self.y_pred[k][i] > self.threshold:
                         fp = fp + 1
                 except KeyError:
                     pass
@@ -411,7 +411,7 @@ class StandardMatrics:
         for k, v in self.y_pred.items():
             for i in list(v.keys()):
                 try:
-                    if i not in self.y_true[k] and self.y_pred[k][i] <= self.threshold:
+                    if i not in self.y_true[k][0] and self.y_pred[k][i] <= self.threshold:
                         tn = tn + 1
                 except KeyError:
                     pass

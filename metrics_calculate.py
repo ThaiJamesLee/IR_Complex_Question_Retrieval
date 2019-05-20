@@ -291,9 +291,9 @@ class Standard:
 # print(execute_singethreaded())
 
 
-m = Standard(only_actual=False)
+m = Standard(only_actual=True)
 # run all scores with same threshold..
-# print(m.excecute_stand_multithreaded(threshold=0))
+print(m.excecute_stand_multithreaded(threshold=0))
 
 # tune bm25 threshold ..
 # print(m.calculate_stand_bm25('BM25',threshold=100, only_actual=True))
@@ -301,18 +301,18 @@ m = Standard(only_actual=False)
 
 # # tune tf-idf threshold..
 # print(m.calculate_stand_tfidf('TF-IDF',threshold=0.0))
-print(m.calculate_stand_tfidf('TF-IDF',threshold=0.1))
-print(m.calculate_stand_tfidf('TF-IDF',threshold=0.2))
-print(m.calculate_stand_tfidf('TF-IDF',threshold=0.3))
-print(m.calculate_stand_tfidf('TF-IDF',threshold=0.4))
-print(m.calculate_stand_tfidf('TF-IDF',threshold=0.5))
+# print(m.calculate_stand_tfidf('TF-IDF',threshold=0.1))
+# print(m.calculate_stand_tfidf('TF-IDF',threshold=0.2))
+# print(m.calculate_stand_tfidf('TF-IDF',threshold=0.3))
+# print(m.calculate_stand_tfidf('TF-IDF',threshold=0.4))
+# print(m.calculate_stand_tfidf('TF-IDF',threshold=0.5))
 
 
 
 #
 # # tune glove threshold..
-print(m.calculate_stand_glove('GloVe',threshold=0.1))
-print(m.calculate_stand_glove('GloVe',threshold=0.2))
-print(m.calculate_stand_glove('GloVe',threshold=0.3))
-print(m.calculate_stand_glove('GloVe',threshold=0.4))
-print(m.calculate_stand_glove('GloVe',threshold=0.5))
+# print(m.calculate_stand_glove('GloVe',threshold=0.1))
+# print(m.calculate_stand_glove('GloVe',threshold=0.2))
+# print(m.calculate_stand_glove('GloVe',threshold=0.3))
+# print(m.calculate_stand_glove('GloVe',threshold=0.4))
+# print(m.calculate_stand_glove('GloVe',threshold=0.5))
