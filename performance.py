@@ -454,3 +454,86 @@ class StandardMatrics:
         f1 = (2*p*r) / (p + r)
         print(name, 'F1:', f1)
         return f1
+
+class StandardAverageMetrics:
+    """
+    Class for compute average standard performance scores
+    """
+
+    def __init__(self, y_pred, y_true):
+        self.y_pred = y_pred
+        self.y_true = y_true
+        self.precision_scores={}
+        self.recall_sccores={}
+        self.f1_scores={}
+        self.acc_scores={}
+
+    def add_each_scores(self):
+
+        for k, v in self.y_true.items():
+            tp = 0
+            fp = 0
+            fn = 0
+            total = len(self.y_true.keys())-1 # total docs number except itself
+            for i in v[0]:
+                try:
+                    if i in self.y_pred[k].keys():
+                        tp = tp + 1
+                    else:
+                        fn = fn + 1
+                except KeyError:
+                    pass
+
+            try:
+                for i in self.y_pred[k].keys():
+                    try:
+                        if i not in v[0]:
+                            fp = fp + 1
+                    except KeyError:
+                        pass
+
+                tn = total - tp - fp - fn
+                try:
+                    p = tp / (tp + fp)
+                    self.precision_scores.update({k: p})
+
+                    r = tp / (tp + fn)
+                    self.recall_sccores.update({k: r})
+
+                    acc = (tp + tn) / (tp + tn + fp + fn)
+                    self.acc_scores.update({k: acc})
+
+                    f1 = (2 * p * r) / (p + r)
+                    self.f1_scores.update({k: f1})
+                except ZeroDivisionError:
+                    pass
+            except KeyError:
+                pass
+
+    def calculate_avg_scores(self, name):
+        self.add_each_scores()
+        total_precision = 0.0
+        total_recall = 0.0
+        total_f1 = 0.0
+        total_acc = 0.0
+        len_doc = len(self.y_true.keys())
+
+        for k, v in self.precision_scores.items():
+            total_precision += v
+
+        for k, v in self.recall_sccores.items():
+            total_recall += v
+
+        for k, v in self.f1_scores.items():
+            total_f1 += v
+
+        for k, v in self.acc_scores.items():
+            total_acc += v
+
+        print(f"{name} Acc:{total_acc/len_doc}\n"
+              f"{name} P:{total_precision/len_doc}\n"
+              f"{name} R:{total_recall/len_doc}\n"
+              f"{name} F1:{total_f1/len_doc}\n"
+              )
+
+        return total_acc/len_doc, total_precision/len_doc, total_recall/len_doc, total_f1/len_doc

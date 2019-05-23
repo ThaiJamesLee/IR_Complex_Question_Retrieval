@@ -42,7 +42,8 @@ class Metrics:
         Run the metrics calculation with multiple threads.
         The order of the output is not guaranteed.
         """
-        self.batches = {'BM25': self.bm25_scores, 'TF-IDF': self.tfidf_scores, 'TF-IDF + Roccio': self.tfidf_rocchio_scores, 'GloVe': self.glove_scores, 'GloVe + Rocchio': self.glove_rocchio_scores}
+        # self.batches = {'BM25': self.bm25_scores, 'TF-IDF': self.tfidf_scores, 'TF-IDF + Roccio': self.tfidf_rocchio_scores, 'GloVe': self.glove_scores, 'GloVe + Rocchio': self.glove_rocchio_scores}
+        self.batches = {'TF-IDF + Roccio': self.tfidf_rocchio_scores, 'GloVe + Rocchio': self.glove_rocchio_scores}
 
     def calculate_metrics(self, name, scores, queue, threshold, only_actual):
         """
@@ -197,6 +198,26 @@ class Standard:
             queue.put((acc, p, r, f1))
         return acc, p, r, f1
 
+    def calculate_standard_avg_metrics(self, name, scores, queue):
+        """
+        Calculates the standard metrics for document classification.
+        :param name: name of scores, e.g. 'BM25', 'TF-IDF'
+        :param scores: dicts of predicted scores, {docid:{{docid:value, ...}}...}
+        :param queue:
+        :param threshold:
+        :return: acc, P, R, F1
+        """
+        if self.only_actual is True:
+            y_pred = self.filter_predict_by_actual(scores=scores)
+        else :
+            y_pred = self.filter_predict_by_top_k(scores=scores, top_k=self.top_k)
+
+        m = StandardAverageMetrics(y_pred=y_pred, y_true=self.true_label)
+        acc,p,r,f1 = m.calculate_avg_scores(name)
+        if queue is not None:
+            queue.put((acc, p, r, f1))
+        return acc, p, r, f1
+
     def excecute_stand_multithreaded(self, threshold=0.0):
         """
         Create batches of tasks. Each batch calculates the Precision, Recall, and F1 score.
@@ -209,6 +230,30 @@ class Standard:
         try:
             for k, v in self.batches.items():
                 t = Thread(target=self.calculate_standard_metrics, args=(k, v, score_queue, threshold))
+                threads.append(t)
+                t.start()
+
+            for t in threads:
+                t.join()
+
+            while not score_queue.empty():
+                scores.append(score_queue.get())
+        except:
+            print("Error: unable to start thread")
+        return scores
+
+    def excecute_avg_stand_multithreaded(self):
+        """
+        Create batches of tasks. Each batch calculates the Precision, Recall, and F1 score.
+        :return:
+        """
+        score_queue = Queue()
+        scores = []
+        threads = []
+
+        try:
+            for k, v in self.batches.items():
+                t = Thread(target=self.calculate_standard_avg_metrics, args=(k, v, score_queue))
                 threads.append(t)
                 t.start()
 
@@ -293,9 +338,12 @@ class Standard:
 # print(execute_singethreaded())
 
 
-m = Standard(only_actual=True)
+# m = Standard(only_actual=True)
 # run all scores with same threshold..
-print(m.excecute_stand_multithreaded(threshold=0))
+# print(m.excecute_stand_multithreaded(threshold=0))
+#
+# m = Standard(only_actual=True)
+# print(m.excecute_avg_stand_multithreaded())
 
 # tune bm25 threshold ..
 # print(m.calculate_stand_bm25('BM25',threshold=100, only_actual=True))
