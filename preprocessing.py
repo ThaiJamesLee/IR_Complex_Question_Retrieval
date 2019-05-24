@@ -22,11 +22,10 @@ class Preprocess(object):
     Example of initial a new dataset
     obj = Preprocess('lemma', 'test200-train/train.pages.cbor-paragraphs.cbor',
                      "test200-train//train.pages.cbor",
-                     "test200-train/train.pages.cbor-toplevel.qrels",
-                     "test200-train/train.pages.cbor-hierarchical.qrels",
-                     "test200-train/train.pages.cbor-article.qrels")
+                     "test200-train/train.pages.cbor-hierarchical.qrels")
     """
-    def __init__(self, process_type, para_path, page_path, *query_path):
+
+    def __init__(self, process_type, para_path, page_path, query_path):
         """ get data and structure from file
         Parameters
         ----------
@@ -55,7 +54,7 @@ class Preprocess(object):
         doc_rel(dict{docid:[relevant docid]})
         """
         self.paragraphs, self.paragraph_ids, self.documents = Preprocess.load_paragraph(para_path, process_type)
-        self.y_true, self.raw_query, self.processed_query = Preprocess.load_query(process_type, *query_path)
+        self.y_true, self.raw_query, self.processed_query = Preprocess.load_query(process_type, query_path)
         self.page_content, self.page_name = Preprocess.load_page(page_path)
         self.article_paragraph = {}
         self.article_section = {}
@@ -64,6 +63,7 @@ class Preprocess(object):
         self.para_in_page = []
         self.section_in_page = []
         self.paragraph_article_section_relation()
+
         self.train, self.test = self.create_train_test()
         self.process_train = Preprocess.process_query_in_test(self.train, self.raw_query, self.processed_query)
         self.process_test = Preprocess.process_query_in_test(self.test, self.raw_query, self.processed_query)
@@ -135,7 +135,7 @@ class Preprocess(object):
         return paragraphs, paragraph_ids, documents
 
     @classmethod
-    def load_query(cls, process_type, *args):
+    def load_query(cls, process_type, query_path):
         """ load the query collection
         Parameters
         ----------
@@ -147,10 +147,8 @@ class Preprocess(object):
         raw_query(:obj:'list' of 'str')
         processed_query(:obj:'list' of :obj:'list' of 'str')
         """
-        y_true = TrecQrel(args[0]).qrels_data
+        y_true = TrecQrel(query_path).qrels_data
         processed_query = []
-        for idx in range(1, len(args)):
-            y_true = y_true.append(TrecQrel(args[idx]).qrels_data)
         raw_query = np.unique((list(y_true['query'])))
         for idx, query in enumerate(raw_query):
             # first 7 digits 'enwiki:' for every query is the same
@@ -172,23 +170,36 @@ class Preprocess(object):
         print(f'number of pages: {len(page_content)}')
         return page_content, page_name
 
-    def allocate_page(self, section, section_name, page):
-        sub_paragraph = []
+    def allocate_page(self, section, section_name):
+        # print(section_name)
         for item in section.children:
             if type(item) == trec_car.read_data.Para:
                 self.para_in_page.append(item.paragraph.para_id)
-                sub_paragraph.append(item.paragraph.para_id)
-                self.para_art_sec[item.paragraph.para_id] = page.page_id
+                self.para_art_sec[item.paragraph.para_id] = section_name
+                if not self.section_paragraph.get(section_name):
+                    self.section_paragraph[section_name] = [item.paragraph.para_id]
+                else:
+                    self.section_paragraph[section_name].append(item.paragraph.para_id)
             elif type(item) == trec_car.read_data.List:
                 self.para_in_page.append(item.body.para_id)
-                self.para_art_sec[item.body.para_id] = page.page_id
+                self.para_art_sec[item.body.para_id] = section_name
+                if not self.section_paragraph.get(section_name):
+                    self.section_paragraph[section_name] = [item.body.para_id]
+                else:
+                    self.section_paragraph[section_name].append(item.body.para_id)
+            elif type(item) == trec_car.read_data.Section:
+                # print(f'heading {item.headingId}')
+                sub_section_name = f'{section_name}/{item.headingId}'
+                self.section_in_page.append(sub_section_name)
+                self.allocate_page(item, sub_section_name)
             else:
-                section_name = section_name + item.headingId
-                self.section_in_page.append(section_name)
-                self.allocate_page(item, section_name, page)
-        self.section_paragraph[section_name] = sub_paragraph
+                print('Nonetype')
 
     def paragraph_article_section_relation(self):
+        """
+        use page structure to put the documents in the corresponding article/section
+        for later train/test dataset creation
+        """
         for page in self.page_content:
             self.para_in_page = []
             self.section_in_page = []
@@ -200,9 +211,10 @@ class Preprocess(object):
                     self.para_in_page.append(item.body.para_id)
                     self.para_art_sec[item.body.para_id] = page.page_id
                 elif type(item) == trec_car.read_data.Section:
-                    section_name = f'{page.page_id} / {item.headingId}'
+                    # print(f'heading{item.headingId}')
+                    section_name = f'{page.page_id}/{item.headingId}'
                     self.section_in_page.append(section_name)
-                    self.allocate_page(item, section_name, page)
+                    self.allocate_page(item, section_name)
                 else:
                     print('Nonetype')
             self.article_paragraph[page.page_id] = self.para_in_page
@@ -235,19 +247,19 @@ class Preprocess(object):
 
         """
 
-        train = self.y_true[self.y_true['query'] == self.raw_query[0]]
-        test = self.y_true[self.y_true['query'] == self.raw_query[0]]
+        train = self.y_true #[self.y_true['query'] == self.raw_query[0]]
+        test = self.y_true #[self.y_true['query'] == self.raw_query[0]]
         for idx, query in enumerate(self.raw_query):
             print(query)
             print(f"no {idx + 1} / {len(self.raw_query)}")
             # add true
             # print(f"raw true docs: {len(self.y_true[self.y_true['query'] == query])}")
-            train = train.append(self.y_true[self.y_true['query'] == query])
-            test = test.append(self.y_true[self.y_true['query'] == query])
+            # train = train.append(self.y_true[self.y_true['query'] == query])
+            # test = test.append(self.y_true[self.y_true['query'] == query])
             true_paragraphs = self.y_true[self.y_true['query'] == query]['docid']
             # add noise
             for para in true_paragraphs:
-                this_article = self.para_art_sec[para].split("/")[0]
+                this_article = self.para_art_sec[para].split("/")[0].replace(' ','')
                 noise_paragraph = []
                 # train set
                 if '/' not in self.para_art_sec[para]:
@@ -265,34 +277,46 @@ class Preprocess(object):
                 else:
                     # print("it's section")
                     noise_paragraph = []
+                    # print(f'this article {this_article}')
                     this_section = self.para_art_sec[para]
-                    sections = self.article_sections.get(this_article)  # section under this article
+                    # print(f'this section {this_section}')
+                    sections = self.article_section[this_article]  # section under this article
+                    # print(f'sections under this article:{sections}')
                     # from other section
                     while len(noise_paragraph) < 5:
                         other_section, other_section_paragraphs = Preprocess.random_select_noise(this_section, sections,
                                                                                                  self.section_paragraph)
-                        if len(other_section_paragraphs) > 5 - len(noise_paragraph):
-                            noisy_sample = set(random.sample(other_section_paragraphs, 5 - len(noise_paragraph)))
-                        else:
-                            noisy_sample = set(random.sample(other_section_paragraphs, len(other_section_paragraphs)))
-                        noise_paragraph.extend(self.remove_intersect(true_paragraphs, noisy_sample))
+                        # print(f'othersection {other_section}')
+                        # print(other_section_paragraphs)
+                        if other_section_paragraphs is not None:
+                            if len(other_section_paragraphs) > 5 - len(noise_paragraph):
+                                noisy_sample = set(random.sample(other_section_paragraphs, 5 - len(noise_paragraph)))
+                            else:
+                                noisy_sample = set(random.sample(other_section_paragraphs, len(other_section_paragraphs)))
+                            # print(f'noisy num {len(noisy_sample)}')
+                            noise_paragraph.extend(self.remove_intersect(true_paragraphs, noisy_sample))
+                            # print(f'noise para {len(noise_paragraph)}')
                     # from other article
                     while len(noise_paragraph) < 10:
                         other_article, other_paragraphs = Preprocess.random_select_noise(this_article,
                                                                                          self.article_paragraph.keys(),
                                                                                          self.article_paragraph)
-                        if len(other_paragraphs) > 10 - len(noise_paragraph):
-                            noisy_sample = set(random.sample(other_paragraphs, 10 - len(noise_paragraph)))
-                        else:
-                            noisy_sample = set(random.sample(other_paragraphs, len(other_paragraphs)))
-                        noise_paragraph.extend(self.remove_intersect(true_paragraphs, noisy_sample))
+                        # print(f'other art {other_article}')
+                        if other_paragraphs is not None:
+                            if len(other_paragraphs) > 10 - len(noise_paragraph):
+                                noisy_sample = set(random.sample(other_paragraphs, 10 - len(noise_paragraph)))
+                            else:
+                                noisy_sample = set(random.sample(other_paragraphs, len(other_paragraphs)))
+                            noise_paragraph.extend(self.remove_intersect(true_paragraphs, noisy_sample))
+                            # print(f'noise para {len(noise_paragraph)}')
 
-                # print(f'len noise: {len(noise_paragraph)}')
                 train = train.append(pd.DataFrame([[query, 0, i, 0] for i in noise_paragraph], columns=train.columns))
 
                 # test set
+                # include paragraph in same article but not same section
                 same_article_paragraphs = self.remove_intersect(true_paragraphs,
                                                                 list(set(self.article_paragraph.get(this_article))))
+                # include same amount paragraphs from other article
                 if len(same_article_paragraphs) > 0:
                     other_article_paragraphs = []
                     while len(other_article_paragraphs) < len(same_article_paragraphs):
@@ -336,7 +360,7 @@ class Preprocess(object):
                     doc_rel.update({doc: [v]})
                 else:
                     doc_rel[doc].append(v)
+        # remove doc itself
         doc_rel = {k: [[item for item in v[0] if item != k]] for k, v in doc_rel.items()}
         pickle.dump(doc_rel, open('documents_retrieval/doc_rel.pkl', 'wb'))
         return doc_rel
-
