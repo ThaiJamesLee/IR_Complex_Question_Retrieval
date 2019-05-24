@@ -56,7 +56,7 @@ class HTMLCreator:
         for docid, section in self.retrieved_docs.items():
             section_2 += f'<h3>{section}</h3><hr><p>{self.docs[docid]} </p> '
 
-        full_html = f'{part_first}<section>{section_1}</section><section>{section_2}</section{part_end}'
+        full_html = f'{part_first}<h2>{self.query}</h2><section>{section_1}</section><section>{section_2}</section{part_end}'
 
         file = open(f"{title_n}.html", "w")
         file.write(full_html)
