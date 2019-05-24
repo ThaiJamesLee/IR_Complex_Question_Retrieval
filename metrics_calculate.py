@@ -110,19 +110,29 @@ class Metrics:
         return map
 
 class Standard:
-    def __init__(self, top_k=20, only_actual=True):
+    def __init__(self, top_k=5, only_actual=True):
         print('load doc_doc data...')
 
-        self.origin_true_label = pickle.load(open('documents_retrieval/doc_rel.pkl', 'rb'))
-        self.true_label = {k: [[item for item in v[0] if item != k]] for k, v in self.origin_true_label.items()}
+        # doc_doc relevant true label
+        self.true_label = pickle.load(open('documents_retrieval/doc_rel.pkl', 'rb'))
 
+        # bm25 scores
         self.bm25 = pickle.load(open('documents_retrieval/doc_doc_bm25_scores.pkl', 'rb'))
+
+        # glove scores
         self.glove = pickle.load(open('documents_retrieval/doc_doc_glove_scores.pkl', 'rb'))
+        # glove + query expansion scores
         self.glove_rocchio = pickle.load(open('documents_retrieval/doc_doc_glove_rocchio_scores_5.pkl', 'rb'))
+
+        # TF-IDF scores
         self.tfidf = pickle.load(open('documents_retrieval/doc_doc_tfidf_scores.pkl', 'rb'))
+        # TF-IDF + query expansion scores
         self.tfidf_rocchio = pickle.load(open('documents_retrieval/doc_doc_tfidf_rocchio_scores_5.pkl', 'rb'))
 
+        # when only_actual is not True, we retrieve top_k relevant docs on each predictor.
         self.top_k = top_k
+
+        # e.g. when doc A contains 3 relevant docs, we retrieve top 3 predicted docs for evaluation.
         self.only_actual = only_actual
         if only_actual is True:
             print('only_actual: True')
@@ -131,10 +141,10 @@ class Standard:
 
         self.batches = {'BM25': self.bm25, 'TF-IDF': self.tfidf, 'TF-IDF + Roccio': self.tfidf_rocchio, 'GloVe': self.glove, 'GloVe + Rocchio': self.glove_rocchio}
 
-    def filter_predict_by_top_k(self, scores, top_k =20):
+    def filter_predict_by_top_k(self, scores, top_k =10):
         """
-        :param scores: dict of key, value{docid:socre, ..} pairs
-        :param top_k: top_k has default value of 100
+        :param scores: predicted docs, dict of key, value{docid:socre, ..} pairs
+        :param top_k: top_k has default value of 10
         :return: filtered dict of top_k best scores
         """
         filtered_pred = {}
@@ -152,8 +162,7 @@ class Standard:
 
     def filter_predict_by_actual(self, scores):
         """
-
-        :param scores: dict of key, value{docid:socre, ..} pairs
+        :param scores: predicted scores, dict of key, value{docid:socre, ..} pairs
         :return: retrieve top n scores of predicted docids, where n equal to number of true_label
                  e.g. if true label d1 contains 2 rel docs, then retrieve 2 highest docs in predicts.
         """
@@ -176,11 +185,11 @@ class Standard:
 
     def calculate_standard_metrics(self, name, scores, queue, threshold=0):
         """
-        Calculates the standard metrics for document classification.
+        Aggregated method : aggregate all, compute one P/R/F1
+
         :param name: name of scores, e.g. 'BM25', 'TF-IDF'
         :param scores: dicts of predicted scores, {docid:{{docid:value, ...}}...}
         :param queue:
-        :param threshold:
         :return: acc, P, R, F1
         """
         if self.only_actual is True:
@@ -200,11 +209,11 @@ class Standard:
 
     def calculate_standard_avg_metrics(self, name, scores, queue):
         """
-        Calculates the standard metrics for document classification.
+        Average method : compute P/R/F1 for each query, then average.
+
         :param name: name of scores, e.g. 'BM25', 'TF-IDF'
         :param scores: dicts of predicted scores, {docid:{{docid:value, ...}}...}
         :param queue:
-        :param threshold:
         :return: acc, P, R, F1
         """
         if self.only_actual is True:
@@ -220,6 +229,8 @@ class Standard:
 
     def excecute_stand_multithreaded(self, threshold=0.0):
         """
+        For Aggregated method :
+
         Create batches of tasks. Each batch calculates the Precision, Recall, and F1 score.
         :return:
         """
@@ -244,6 +255,7 @@ class Standard:
 
     def excecute_avg_stand_multithreaded(self):
         """
+        For Average method :
         Create batches of tasks. Each batch calculates the Precision, Recall, and F1 score.
         :return:
         """
@@ -338,23 +350,25 @@ class Standard:
 # print(execute_singethreaded())
 
 
+
+"""
+To compute p/r/f1 with aggregated method
+"""
 # m = Standard(only_actual=True)
-# run all scores with same threshold..
 # print(m.excecute_stand_multithreaded(threshold=0))
-#
-# m = Standard(only_actual=True)
+
+
+"""
+To compute p/r/f1 with average method
+"""
+# m = Standard(only_actual=False)
 # print(m.excecute_avg_stand_multithreaded())
 
 # tune bm25 threshold ..
-# print(m.calculate_stand_bm25('BM25',threshold=100, only_actual=True))
 # print(m.calculate_stand_bm25('BM25',threshold=5, only_actual=False))
 
 # # tune tf-idf threshold..
 # print(m.calculate_stand_tfidf('TF-IDF',threshold=0.0))
-# print(m.calculate_stand_tfidf('TF-IDF',threshold=0.1))
-# print(m.calculate_stand_tfidf('TF-IDF',threshold=0.2))
-# print(m.calculate_stand_tfidf('TF-IDF',threshold=0.3))
-# print(m.calculate_stand_tfidf('TF-IDF',threshold=0.4))
 # print(m.calculate_stand_tfidf('TF-IDF',threshold=0.5))
 
 
@@ -362,7 +376,4 @@ class Standard:
 #
 # # tune glove threshold..
 # print(m.calculate_stand_glove('GloVe',threshold=0.1))
-# print(m.calculate_stand_glove('GloVe',threshold=0.2))
-# print(m.calculate_stand_glove('GloVe',threshold=0.3))
-# print(m.calculate_stand_glove('GloVe',threshold=0.4))
 # print(m.calculate_stand_glove('GloVe',threshold=0.5))
