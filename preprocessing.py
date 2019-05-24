@@ -336,6 +336,7 @@ class Preprocess(object):
                     doc_rel.update({doc: [v]})
                 else:
                     doc_rel[doc].append(v)
+        doc_rel = {k: [[item for item in v[0] if item != k]] for k, v in doc_rel.items()}
         pickle.dump(doc_rel, open('documents_retrieval/doc_rel.pkl', 'wb'))
         return doc_rel
 
