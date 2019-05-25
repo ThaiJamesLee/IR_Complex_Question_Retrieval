@@ -51,7 +51,7 @@ exec_with_multithread = True
 
 
 def execute():
-    Preprocess(process_type, train_paragraphs, train_pages, train_pages_toplevel, train_pages_hierarchical, train_pages_article)
+    Preprocess(process_type, train_paragraphs, train_pages, train_pages_hierarchical)
 
     # execute this to cache semantic word embeddings
     # this requires the glove.840B.300d.txt file in this directory
@@ -96,8 +96,8 @@ def execute():
 
 
 if __name__ == "__main__":
-    # execute()
-    L2R_test.execute_L2R(L2R_test.MART_md)
+    execute()
+    #L2R_test.execute_L2R(L2R_test.MART_md)
 
 
 

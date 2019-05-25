@@ -11,7 +11,7 @@ from queue import Queue
 
 class Metrics:
 
-    def __init__(self, top_k=10):
+    def __init__(self, top_k=10, rocchio_terms=5):
         print('Load data...')
 
         # processed queries
@@ -27,7 +27,7 @@ class Metrics:
         self.tfidf_scores = pickle.load(open('cache/cosine_tf_idf.pkl', 'rb'))
 
         # cosine similarity tfidf with rocchio
-        self.tfidf_rocchio_scores = pickle.load(open('cache/cosine_query_expansion.pkl', 'rb'))
+        self.tfidf_rocchio_scores = pickle.load(open(f'cache/cosine_query_expansion_{rocchio_terms}.pkl', 'rb'))
 
         # cosine similarity tfidf with glove word embedding
         self.glove_scores = pickle.load(open('cache/cosine_sem_we.pkl', 'rb'))

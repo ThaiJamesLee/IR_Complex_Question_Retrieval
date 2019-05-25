@@ -26,9 +26,9 @@ class createInputForL2R:
         # load score matrix
         self.bm25_score = pickle.load(open('cache/bm25_scores.pkl', 'rb'))
         self.tfidf_score = pickle.load(open('cache/cosine_tf_idf.pkl', 'rb'))
-        self.glove_score = pickle.load(open('cache/cosine_glove.pkl', 'rb'))
-        self.tfidf_rocchio_score = pickle.load(open('cache/cosine_tf_idf_qe.pkl', 'rb'))
-        self.glove_rocchio_score = pickle.load(open('cache/cosine_glove_qe.pkl', 'rb'))
+        self.glove_score = pickle.load(open('cache/cosine_sem_we.pkl', 'rb'))
+        self.tfidf_rocchio_score = pickle.load(open('cache/cosine_query_expansion_5.pkl', 'rb'))
+        self.glove_rocchio_score = pickle.load(open('cache/cosine_sem_we_query_exp.pkl', 'rb'))
         # load dataset to process
         train = pickle.load(open(train, 'rb'))
         test = pickle.load(open(test, 'rb'))
