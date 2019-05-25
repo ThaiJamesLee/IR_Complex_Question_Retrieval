@@ -17,6 +17,7 @@ from create_features import FeatureGenerator
 from tf_idf import TFIDF
 import create_input_for_L2R
 from metrics_calculate import Metrics
+from metrics_calculate import Standard
 from L2R import L2R_test
 import os
 
@@ -27,9 +28,7 @@ process_type = 'lemma'
 # file paths to the test200 data
 train_paragraphs = 'test200-train/train.pages.cbor-paragraphs.cbor'
 train_pages = 'test200-train//train.pages.cbor'
-train_pages_toplevel = 'test200-train/train.pages.cbor-toplevel.qrels'
 train_pages_hierarchical = 'test200-train/train.pages.cbor-hierarchical.qrels'
-train_pages_article = 'test200-train/train.pages.cbor-article.qrels'
 
 # paths of files generated via Preprocess
 
@@ -37,7 +36,7 @@ train_pages_article = 'test200-train/train.pages.cbor-article.qrels'
 
 # filter scores by threshold
 threshold = 0.0
-top_k = 20
+top_k = 10
 
 # when using rocchio: expand query by the number of new terms
 rocchio_terms = 5
@@ -50,8 +49,9 @@ only_actual = True
 exec_with_multithread = True
 
 
-def execute():
-    Preprocess(process_type, train_paragraphs, train_pages, train_pages_hierarchical)
+# pipeline to run the learning to rank task
+def execute_L2R_task():
+    # Preprocess(process_type, train_paragraphs, train_pages, train_pages_hierarchical)
 
     # execute this to cache semantic word embeddings
     # this requires the glove.840B.300d.txt file in this directory
@@ -83,7 +83,7 @@ def execute():
     feature_generator.calculate_cosine_glove_and_rocchio(rocchio_terms=rocchio_terms)
     feature_generator.calculate_cosine_glove()
 
-    create_input_for_L2R.createInputForL2R('process_data/process_train.pkl', 'process_data/process_test.pkl')
+    # create_input_for_L2R.createInputForL2R('process_data/process_train.pkl', 'process_data/process_test.pkl')
 
     # calculate metrics for bm25, tf-idf, tf-idf + rocchio, glove, glove + rocchio
     m = Metrics(top_k=top_k)
@@ -92,11 +92,30 @@ def execute():
     else:
         m.execute_singethreaded(threshold=threshold, only_actual=only_actual)
 
-    L2R_test.execute_L2R(L2R_test.CoordinateAscent_md)
+    # L2R_test.execute_L2R(L2R_test.CoordinateAscent_md)
+
+
+# create synthetic page
+def execute_complex_answer_retrieval_task():
+
+    c = Caching(process_type=process_type)
+    tf_idf = TFIDF(c.doc_structure)
+    feature_generator = FeatureGenerator(caching=c, tf_idf=tf_idf)
+    feature_generator.generate_bm25_doc_doc(b=0.75, k=1.2)
+
+    feature_generator.generate_cosine_tfidf_doc_doc()
+    feature_generator.generate_cosine_tfidf_rocchio_doc_doc(top_k=top_k, rocchio_terms=rocchio_terms)
+
+    feature_generator.generate_cosine_glove_doc_doc()
+    feature_generator.generate_cosine_glove_rocchio_doc_doc(top_k=top_k, rocchio_terms=rocchio_terms)
+
+    m = Standard(only_actual=True)
+    print(m.excecute_stand_multithreaded(threshold=0))
+
 
 
 if __name__ == "__main__":
-    execute()
+    execute_L2R_task()
     #L2R_test.execute_L2R(L2R_test.MART_md)
 
 

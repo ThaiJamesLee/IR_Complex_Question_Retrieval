@@ -239,17 +239,15 @@ class FeatureGenerator:
         self.caching.create_document_embeddings()
         print('saved.')
 
-    def generate_bm25_doc_doc(self, file=None):
+    def generate_bm25_doc_doc(self, b=0.75, k=1.2, file=None):
         """
-        Generates all features for doc: doc: score.
-        This includes tf-idf, tf-idf + rocchio, bm25, glove, glove + rocchio
+        Generate scores for bm25
         :param file specify a file name
         :return:
         """
         # where to store every result
 
-
-        bm25 = BM25(self.caching.doc_structure)
+        bm25 = BM25(self.caching.doc_structure, b=b, k=k)
 
         # contains docid: list(terms)
         docs = self.caching.create_doc_terms()
@@ -266,7 +264,8 @@ class FeatureGenerator:
             counter += 1
 
             # score contains dict of docid: score
-            score = bm25.compute_relevance_on_corpus_list(terms)
+            score = bm25.compute_relevance_on_corpus(terms)
+            score.pop(doc, None)
             scores.update({doc: score})
         print(f'Store BM25 scores in {filepath_bm25}')
         pickle.dump(scores, open(filepath_bm25, 'wb'))
@@ -299,9 +298,10 @@ class FeatureGenerator:
                 counter += 1
                 similarity = {}
                 for k1, v1 in tf_idf.term_doc_matrix.items():
-                    score = Similarity.cosine_similarity_normalized(v, v1)
-                    if score > 0:
-                        similarity.update({k1: score})
+                    if k != k1:
+                        score = Similarity.cosine_similarity_normalized(v, v1)
+                        if score > 0:
+                            similarity.update({k1: score})
                 scores.update({k: similarity})
 
             print(f'Store TF-IDF scores in {filepath}')
@@ -343,9 +343,10 @@ class FeatureGenerator:
 
                 similarity = {}
                 for k1, v1 in tf_idf.term_doc_matrix.items():
-                    score = Similarity.cosine_similarity_normalized(new_query, v1)
-                    if score > 0:
-                        similarity.update({k1: score})
+                    if k != k1:
+                        score = Similarity.cosine_similarity_normalized(new_query, v1)
+                        if score > 0:
+                            similarity.update({k1: score})
                 scores.update({k: similarity})
 
             print(f'Store TF-IDF + Rocchio scores in {filepath}')
@@ -377,9 +378,10 @@ class FeatureGenerator:
 
                 similarity = {}
                 for doc1, vec1 in doc_glove_vectors.items():
-                    score = Similarity.cosine_similarity_array(vec, vec1)
-                    if score > 0:
-                        similarity.update({doc1: score})
+                    if doc != doc1:
+                        score = Similarity.cosine_similarity_array(vec, vec1)
+                        if score > 0:
+                            similarity.update({doc1: score})
                 scores.update({doc: similarity})
 
             print(f'Store Glove scores in {filepath}')
@@ -428,9 +430,10 @@ class FeatureGenerator:
 
                 similarity = {}
                 for doc1, vec1 in doc_glove_vectors.items():
-                    score = Similarity.cosine_similarity_array(vec, vec1)
-                    if score > 0:
-                        similarity.update({doc1: score})
+                    if doc != doc1:
+                        score = Similarity.cosine_similarity_array(vec, vec1)
+                        if score > 0:
+                            similarity.update({doc1: score})
                 scores.update({doc: similarity})
 
             print(f'Store Glove + Rocchio scores in {filepath}')
@@ -557,8 +560,9 @@ class FeatureGenerator:
 
 
 # print('================== Load Data ===================')
+# feature_generator = FeatureGenerator()
+# feature_generator.generate_bm25_doc_doc(k=1.2, b=1.0)
 
-"""
 feature_generator = FeatureGenerator()
 feature_generator.generate_bm25_doc_doc()
 
@@ -567,7 +571,7 @@ feature_generator.generate_cosine_tfidf_rocchio_doc_doc()
 
 feature_generator.generate_cosine_glove_doc_doc()
 feature_generator.generate_cosine_glove_rocchio_doc_doc()
-"""
+
 # feature_generator = FeatureGenerator()
 # feature_generator.generate_cosine_glove_rocchio_doc_doc()
 # feature_generator.generate_cosine_tfidf_doc_doc()
