@@ -22,7 +22,7 @@ class Caching:
     - you ran cache_word_embeddings at least once
     """
 
-    def __init__(self, vector_dimension=300, process_type='stem'):
+    def __init__(self, vector_dimension=300, process_type='lemma'):
         """
 
         :param vector_dimension: this attribute depends on the pre-trained glove file. Since we were using

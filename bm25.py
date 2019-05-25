@@ -74,7 +74,7 @@ class BM25:
 
     def idf_weight_2(self, term):
         """
-        see:  https://www.elastic.co/blog/practical-bm25-part-2-the-bm25-algorithm-and-its-variables
+        see:  https://www.elastic.co/blog/practical-bm25-part-2-the-bmbb25-algorithm-and-its-variables
         idf = ln((1+(#docs-df+0.5))/())
         :param term: get weight based on article
         :return: the idf weight for given term.
@@ -129,7 +129,7 @@ class BM25:
         :param query: input as string separated by whitespaces
         :return: dict of {docid: relevance_score, ...}
         """
-        if type(query) == 'str':
+        if type(query) == str:
             query = query.split()
         elif type(query) != str and type(query) != list:
             raise Exception('Invalid input. The query must be of type str or list!')
