@@ -12,6 +12,11 @@ from queue import Queue
 class Metrics:
 
     def __init__(self, top_k=10, rocchio_terms=5):
+        """
+
+        :param top_k: sets top_k documents for rocchio and also for metrics calculation to consider.
+        :param rocchio_terms:
+        """
         print('Load data...')
 
         # processed queries
@@ -42,8 +47,8 @@ class Metrics:
         Run the metrics calculation with multiple threads.
         The order of the output is not guaranteed.
         """
-        # self.batches = {'BM25': self.bm25_scores, 'TF-IDF': self.tfidf_scores, 'TF-IDF + Roccio': self.tfidf_rocchio_scores, 'GloVe': self.glove_scores, 'GloVe + Rocchio': self.glove_rocchio_scores}
-        self.batches = {'TF-IDF + Roccio': self.tfidf_rocchio_scores, 'GloVe + Rocchio': self.glove_rocchio_scores}
+        self.batches = {'BM25': self.bm25_scores, 'TF-IDF': self.tfidf_scores, 'TF-IDF + Roccio': self.tfidf_rocchio_scores, 'GloVe': self.glove_scores, 'GloVe + Rocchio': self.glove_rocchio_scores}
+        # self.batches = {'TF-IDF + Roccio': self.tfidf_rocchio_scores, 'GloVe + Rocchio': self.glove_rocchio_scores}
 
     def calculate_metrics(self, name, scores, queue, threshold, only_actual):
         """
@@ -51,8 +56,8 @@ class Metrics:
         :param name:
         :param scores:
         :param queue:
-        :param threshold:
-        :param only_actual:
+        :param threshold: sets threshold, only set this, when all metrics are normalized
+        :param only_actual: True, considers only docs that have true labels and ignore top_k, otherwise use top_k only
         :return:
         """
         map = AveragePrecision().calculate_map(name, self.queries, self.true_labels, scores, self.top_k, threshold=threshold, only_actual=only_actual)
@@ -345,6 +350,7 @@ class Standard:
         return acc, p, r, f1
 
 # m = Metrics(top_k=20)
+# print(m.excecute_multithreaded(only_actual=True))
 # print(m.calculate_map_bm25('BM25'))
 # print(Metrics(top_k=30).excecute_multithreaded(only_actual=True))
 # print(execute_singethreaded())
@@ -361,7 +367,7 @@ To compute p/r/f1 with aggregated method
 """
 To compute p/r/f1 with average method
 """
-# m = Standard(only_actual=False)
+# m = Standard(only_actual=True)
 # print(m.excecute_avg_stand_multithreaded())
 
 # tune bm25 threshold ..

@@ -39,6 +39,7 @@ class Caching:
             self.tf_idf_cache = 'cache/tf_idf.pkl'
 
         self.cached_embeddings = pickle.load(open('cache/word_embedding_vectors.pkl', 'rb'))
+        self.unprocessed_corpus = pickle.load(open('process_data/paragraphs.pkl', 'rb'))
 
         # dimension of the embedding vector
         # we are currently using the pre-trained glove model
@@ -86,7 +87,7 @@ class Caching:
         return Utils.get_document_term_from_data(self.test, self.paragraph_ids, self.corpus)
 
     def create_doc_terms_as_string(self):
-        return Utils.get_document_term_from_data_as_string(self.test, self.paragraph_ids, self.corpus)
+        return Utils.get_document_term_from_data_as_string(self.test, self.paragraph_ids, self.unprocessed_corpus)
 
     def create_query_embeddings(self, tf_idf):
         """
