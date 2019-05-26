@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Duc Tai Ly'
 
+import pickle
 
 class HTMLCreator:
 
@@ -16,6 +17,7 @@ class HTMLCreator:
         self.relevant_docs = relevant_docs
         self.retrieved_docs = retrieved_docs
         self.query = query
+        self.para_section = pickle.load(open('process_data/paragraph_article_section.pkl', 'rb'))
 
     def generate_wiki(self, title='Example Wiki', resources='resources'):
         """
@@ -36,10 +38,10 @@ class HTMLCreator:
         <hr>
         """
 
-        part_end = """
-        <h2>Created For</h2>
-        <p>University of Mannheim</p>
-        <p>IR Project FSS-2019</p>
+        part_end = """        
+        <h3>Created For</h3>
+        <li>University of Mannheim</li>
+        <li>IR Project FSS-2019</li>
         <h3>Authors</h3>
         <li>Chinhan Chen</li>
         <li>Duc Tai Ly</li>
@@ -50,11 +52,15 @@ class HTMLCreator:
         section_1 = ''
 
         for docid, section in self.relevant_docs.items():
-            section_1 += f'<h3>{section}</h3><hr><p>{self.docs[docid]} </p> '
+            section_1 += f'<h3>True Paragraph</h3> '
+            for s_id in section:
+                section_1 += f'<hr><p>{self.docs[s_id]} </p> '
 
         section_2 = ''
-        for docid, section in self.retrieved_docs.items():
-            section_2 += f'<h3>{section}</h3><hr><p>{self.docs[docid]} </p> '
+        for k, docids in self.retrieved_docs.items():
+            section_2 += f'<h3>Retrieved Paragraph -- {k}</h3> '
+            for s_id in docids:
+                section_2 += f'<h3>{self.para_section[s_id]}</h3><hr><p>{self.docs[s_id]} </p> '
 
         full_html = f'{part_first}<h2>{self.query}</h2><section>{section_1}</section><section>{section_2}</section{part_end}'
 
