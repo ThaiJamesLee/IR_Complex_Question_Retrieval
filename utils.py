@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Duc Tai Ly'
+import numpy as np
 
 
 class Utils:
@@ -20,6 +21,58 @@ class Utils:
             matrix[doc].update({key: value})
         except KeyError:
             matrix.update({doc: {key: value}})
+        return matrix
+
+    @staticmethod
+    def append_ele_to_dict_list(dictionary, key, value):
+        """
+        Adds a k,v pair to a dict, where value is a list of values
+        :param dictionary: dict containing {key: [values], ...}
+        :param key: the key
+        :param value: the value you want to append, must be of type str or list
+        :return: returns the dictionary with the new key, value, where the value is append to a values list
+        """
+        try:
+            dictionary = Utils.add_str_or_list(dictionary, key, value)
+        except KeyError:
+            dictionary = Utils.update_str_or_list(dictionary, key, value)
+        return dictionary
+
+    @staticmethod
+    def add_str_or_list(dictionary, key, value):
+        if type(value) == str or type(value) == int or type(value) == float or type(value) == np.float64:
+            dictionary[key] = np.add(dictionary[key], value)
+        elif type(value) == list:
+            dictionary[key] = np.add(dictionary[key], value)
+        else:
+            raise Exception('Invalid type: the value must be of type str or list!')
+        return dictionary
+
+    @staticmethod
+    def update_str_or_list(dictionary, key, value):
+        if type(value) == str or type(value) == int or type(value) == float or type(value) == np.float64:
+            dictionary.update({key: value})
+        elif type(value) == list:
+            dictionary.update({key: value})
+        else:
+            raise Exception('Invalid type: the value must be of type str or list!')
+        return dictionary
+
+    @staticmethod
+    def append_ele_to_matrix_list(matrix, key1, key2, value):
+        """
+        Adds a k, k, v tuple to a dict that is called the matrix variable
+        :param matrix: is a dictionary of the structure {docid: {docid: [values, ...]}, ...}
+        :param key1: the key of the query or document id that is the query
+        :param key2: the key of the document ranked against the given query or document
+        :param value: the value you want to append, must be of type str or list
+        :return: returns the matrix / dictionary containing the new key, key, value tuple
+        """
+        try:
+            matrix = Utils.append_ele_to_dict_list(matrix[key1], key2, value)
+        except KeyError:
+            # if we get an key error, then the entry with the key pairs are empty and we need to create a new entry
+            matrix.update({key1: Utils.update_str_or_list(dict(), key2, value)})
         return matrix
 
     @staticmethod
@@ -96,6 +149,27 @@ class Utils:
             value = {word: doc.count(word) for word in doc}
             doc_structure.update({docid: value})
         return doc_structure
+
+    @staticmethod
+    def get_document_term_from_data(df, corpus_ids, corpus):
+        """
+
+        :param df: a dataframe containing docids
+        :param corpus_ids:
+        :param corpus:
+        :return:
+        """
+        unique_docid = set(df['docid'])
+        unique_docs = [(docid, corpus[corpus_ids.index(docid)].split()) for docid in unique_docid]
+        return unique_docs
+
+    @staticmethod
+    def get_document_term_from_data_as_string(df, corpus_ids, corpus):
+        unique_docid = set(df['docid'])
+        unique_docs = dict()
+        for docid in unique_docid:
+            unique_docs.update({docid: corpus[corpus_ids.index(docid)]})
+        return unique_docs
 
     @staticmethod
     def get_value_from_key_in_dict(thedict, docid, key):

@@ -199,7 +199,7 @@ class AveragePrecision:
 
         :param name: scores to be evaluated (bm25, tf-idf, ...)
         :param queries: all queries
-        :param true_labels: true labels of query and corresponding doc
+        :param true_labels: dataframe true labels of query and corresponding doc
         :param predicted_scores: predicted relevances
         :param top_k: limit to top relevant document
         :param threshold: minimum score for doc to be considered relevant
@@ -273,7 +273,7 @@ class ReciprocalRank:
 
         :param name: scores to be evaluated (bm25, tf-idf, ...)
         :param queries: all queries
-        :param true_labels: true labels of query and corresponding doc
+        :param true_labels: dataframe true labels of query and corresponding doc
         :param predicted_scores: predicted relevances
         :param top_k: limit to top relevant document
         :param threshold: minimum score for doc to be considered relevant
@@ -341,8 +341,8 @@ class Precision:
         """
 
         :param name: scores to be evaluated (bm25, tf-idf, ...)
-        :param queries: all queries
-        :param true_labels: true labels of query and corresponding doc
+        :param queries: all queries as list
+        :param true_labels: dataframe true labels of query and corresponding doc
         :param predicted_scores: predicted relevances
         :param top_k: limit to top relevant document
         :param threshold: minimum score for doc to be considered relevant
@@ -360,5 +360,180 @@ class Precision:
         print(name, 'R-Prec', r_prec_score)
         return r_prec_score
 
+class StandardMatrics:
+    """
+    Class for compute standard performance scores
+    """
+    def __init__(self, y_pred, y_true, threshold=0):
+        self.threshold = threshold
+        self.y_pred = y_pred
+        self.y_true = y_true
+        self.TP = self.get_tp()
+        self.FN = self.get_fn()
+        self.FP = self.get_fp()
+        self.TN = self.get_tn()
 
+    def get_tp(self):
+        tp = 0
+        for k, v in self.y_true.items():
+            for i in v[0]:
+                try:
+                    if i in self.y_pred[k]:
+                        tp = tp + 1
+                except KeyError:
+                    pass
+        return tp
 
+    def get_fn(self):
+        fn = 0
+        for k, v in self.y_true.items():
+            for i in v[0]:
+                try:
+                    if i not in self.y_pred[k]:
+                        fn = fn + 1
+                except KeyError:
+                    pass
+        return fn
+
+    def get_fp(self):
+        fp = 0
+        for k, v in self.y_pred.items():
+            for i in list(v.keys()):
+                try:
+                    if i not in self.y_true[k][0]:
+                        fp = fp + 1
+                except KeyError:
+                    pass
+        return fp
+
+    def get_tn(self):
+        # tn = 0
+        # for k, v in self.y_pred.items():
+        #     for i in list(v.keys()):
+        #         try:
+        #             if i not in self.y_true[k][0]:
+        #                 tn = tn + 1
+        #         except KeyError:
+        #             pass
+        tn = (4055*4055)-self.TP-self.FP-self.FN
+        return tn
+
+    def get_matrix_value(self):
+        tp = self.TP
+        fn = self.FN
+        tn = self.TN
+        fp = self.FP
+        print(f"tp:{tp}",
+              f"fn:{fn}",
+              f"tn:{tn}",
+              f"fp:{fp}")
+        return tp, fn , tn , fp
+
+    def confusion_matrix(self):
+        cm = np.array([[self.TP, self.FP], [self.FN, self.TN]])
+        return cm
+
+    def calculate_acc(self, name):
+        acc = (self.TP + self.TN) / (self.TP + self.TN + self.FP + self.FN)
+        print(name, 'accuracy:', acc)
+        return acc
+
+    def calculate_precision(self, name):
+        precision = self.TP / (self.TP + self.FP)
+        print(name, 'Precision:', precision)
+        return precision
+
+    def calculate_recall(self, name):
+        recall = self.TP / (self.FN + self.TP)
+        print(name, 'Recall:', recall)
+        return recall
+
+    def calculate_f1(self, name):
+        p = self.TP / (self.TP + self.FP)
+        r = self.TP / (self.FN + self.TP)
+        f1 = (2*p*r) / (p + r)
+        print(name, 'F1:', f1)
+        return f1
+
+class StandardAverageMetrics:
+    """
+    Class for compute average standard performance scores
+    """
+
+    def __init__(self, y_pred, y_true):
+        self.y_pred = y_pred
+        self.y_true = y_true
+        self.precision_scores={}
+        self.recall_sccores={}
+        self.f1_scores={}
+        self.acc_scores={}
+
+    def add_each_scores(self):
+
+        for k, v in self.y_true.items():
+            tp = 0
+            fp = 0
+            fn = 0
+            total = len(self.y_true.keys())-1 # total docs number except itself
+            for i in v[0]:
+                try:
+                    if i in self.y_pred[k].keys():
+                        tp = tp + 1
+                    else:
+                        fn = fn + 1
+                except KeyError:
+                    pass
+
+            try:
+                for i in self.y_pred[k].keys():
+                    try:
+                        if i not in v[0]:
+                            fp = fp + 1
+                    except KeyError:
+                        pass
+
+                tn = total - tp - fp - fn
+                try:
+                    p = tp / (tp + fp)
+                    self.precision_scores.update({k: p})
+
+                    r = tp / (tp + fn)
+                    self.recall_sccores.update({k: r})
+
+                    acc = (tp + tn) / (tp + tn + fp + fn)
+                    self.acc_scores.update({k: acc})
+
+                    f1 = (2 * p * r) / (p + r)
+                    self.f1_scores.update({k: f1})
+                except ZeroDivisionError:
+                    pass
+            except KeyError:
+                pass
+
+    def calculate_avg_scores(self, name):
+        self.add_each_scores()
+        total_precision = 0.0
+        total_recall = 0.0
+        total_f1 = 0.0
+        total_acc = 0.0
+        len_doc = len(self.y_true.keys())
+
+        for k, v in self.precision_scores.items():
+            total_precision += v
+
+        for k, v in self.recall_sccores.items():
+            total_recall += v
+
+        for k, v in self.f1_scores.items():
+            total_f1 += v
+
+        for k, v in self.acc_scores.items():
+            total_acc += v
+
+        print(f"{name} Acc:{total_acc/len_doc}\n"
+              f"{name} P:{total_precision/len_doc}\n"
+              f"{name} R:{total_recall/len_doc}\n"
+              f"{name} F1:{total_f1/len_doc}\n"
+              )
+
+        return total_acc/len_doc, total_precision/len_doc, total_recall/len_doc, total_f1/len_doc

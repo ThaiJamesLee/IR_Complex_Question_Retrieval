@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+__author__ = 'Ching Han Chen'
 """
     Class to execute Rocchio algorithm:
     for each unique term across all documents (from tf_idf_matrix) are passed into Rocchio

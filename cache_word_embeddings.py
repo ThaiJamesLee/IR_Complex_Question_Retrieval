@@ -5,7 +5,6 @@ from wordembedding import WordEmbedding
 from utils import Utils
 
 import pickle
-import numpy as np
 
 """
 Prerequisites:
