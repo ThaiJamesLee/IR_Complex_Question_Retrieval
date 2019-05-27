@@ -67,7 +67,6 @@ class Metrics:
             queue.put((map, mrr, r_prec))
         return map, mrr, r_prec
 
-
     def excecute_multithreaded(self, threshold=0.0, only_actual=False):
         """
         Create batches of tasks. Each batch calculates the R-Prec, MRR, and MAP score.
@@ -114,6 +113,7 @@ class Metrics:
         map = AveragePrecision().calculate_map(name, self.queries, self.true_labels, self.bm25_scores, self.top_k, threshold=threshold, only_actual=only_actual)
         return map
 
+
 class Standard:
     def __init__(self, top_k=5, only_actual=True):
         print('load doc_doc data...')
@@ -146,7 +146,8 @@ class Standard:
 
         self.batches = {'BM25': self.bm25, 'TF-IDF': self.tfidf, 'TF-IDF + Roccio': self.tfidf_rocchio, 'GloVe': self.glove, 'GloVe + Rocchio': self.glove_rocchio}
 
-    def filter_predict_by_top_k(self, scores, top_k =10):
+    @staticmethod
+    def filter_predict_by_top_k(scores, top_k =10):
         """
         :param scores: predicted docs, dict of key, value{docid:socre, ..} pairs
         :param top_k: top_k has default value of 10

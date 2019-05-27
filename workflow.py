@@ -83,24 +83,29 @@ def execute_L2R_task():
     feature_generator.calculate_cosine_glove_and_rocchio(rocchio_terms=rocchio_terms)
     feature_generator.calculate_cosine_glove()
 
-    # create_input_for_L2R.createInputForL2R('process_data/process_train.pkl', 'process_data/process_test.pkl')
 
-    # calculate metrics for bm25, tf-idf, tf-idf + rocchio, glove, glove + rocchio
+    # calculate MAP, MRR, metrics for bm25, tf-idf, tf-idf + rocchio, glove, glove + rocchio
+    # R-Prec not tested!
     m = Metrics(top_k=top_k)
     if exec_with_multithread:
         m.excecute_multithreaded(threshold=threshold, only_actual=only_actual)
     else:
         m.execute_singethreaded(threshold=threshold, only_actual=only_actual)
 
-    # L2R_test.execute_L2R(L2R_test.CoordinateAscent_md)
+    # execute L2R
+    create_input_for_L2R.createInputForL2R('process_data/process_train.pkl', 'process_data/process_test.pkl')
+    # change L2R model with L2R_test.*_md e.g. AdaRank_md, ...
+    L2R_test.execute_L2R(L2R_test.CoordinateAscent_md)
 
 
 # create synthetic page
 def execute_complex_answer_retrieval_task():
-
+    # initialize
     c = Caching(process_type=process_type)
     tf_idf = TFIDF(c.doc_structure)
     feature_generator = FeatureGenerator(caching=c, tf_idf=tf_idf)
+
+    # compute paragraph - paragraph scores and cache
     feature_generator.generate_bm25_doc_doc(b=0.75, k=1.2)
 
     feature_generator.generate_cosine_tfidf_doc_doc()
@@ -111,12 +116,15 @@ def execute_complex_answer_retrieval_task():
 
     m = Standard(only_actual=True)
     print(m.excecute_stand_multithreaded(threshold=0))
-
+    print(m.excecute_avg_stand_multithreaded())
 
 
 if __name__ == "__main__":
+    # each task might take a lot of time
+    # you might want to comment out the task you need
     execute_L2R_task()
-    #L2R_test.execute_L2R(L2R_test.MART_md)
+    execute_complex_answer_retrieval_task()
+
 
 
 

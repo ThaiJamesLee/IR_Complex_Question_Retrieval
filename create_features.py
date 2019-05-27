@@ -563,21 +563,28 @@ class FeatureGenerator:
 # feature_generator = FeatureGenerator()
 # feature_generator.generate_bm25_doc_doc(k=1.2, b=1.0)
 
-feature_generator = FeatureGenerator()
-feature_generator.generate_bm25_doc_doc()
+def generate_all_doc_doc_scores(feature_generator=None):
+    if feature_generator is None:
+        feature_generator = FeatureGenerator()
 
-feature_generator.generate_cosine_tfidf_doc_doc()
-feature_generator.generate_cosine_tfidf_rocchio_doc_doc()
+    feature_generator.generate_bm25_doc_doc(k=1.2, b=0.75)
 
-feature_generator.generate_cosine_glove_doc_doc()
-feature_generator.generate_cosine_glove_rocchio_doc_doc()
+    feature_generator.generate_cosine_tfidf_doc_doc()
+    feature_generator.generate_cosine_tfidf_rocchio_doc_doc()
 
-# feature_generator = FeatureGenerator()
-# feature_generator.generate_cosine_glove_rocchio_doc_doc()
-# feature_generator.generate_cosine_tfidf_doc_doc()
-# feature_generator.generate_cosine_tfidf_rocchio_doc_doc()
-# feature_generator.generate_cosine_glove_doc_doc()
-# feature_generator.generate_scores_doc_doc()
+    feature_generator.generate_cosine_glove_doc_doc()
+    feature_generator.generate_cosine_glove_rocchio_doc_doc()
+
+
+def generate_all_query_doc_scores(feature_generator=None):
+    if feature_generator is None:
+        feature_generator = FeatureGenerator()
+
+    feature_generator.generate_cosine_glove_rocchio_doc_doc()
+    feature_generator.generate_cosine_tfidf_doc_doc()
+    feature_generator.generate_cosine_tfidf_rocchio_doc_doc()
+    feature_generator.generate_cosine_glove_doc_doc()
+    feature_generator.generate_scores_doc_doc()
 
 # feature_generator.calculate_cosine_semantic_embeddings_query_expansion()
 # feature_generator.calculate_cosine_semantic_embeddings()
