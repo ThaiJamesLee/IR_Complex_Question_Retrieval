@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+__author__ = 'Ching Han Chen'
 """
        Test to execute Ranklib:
        Aims to combine different ranking scores of different baselines with L2R setting,

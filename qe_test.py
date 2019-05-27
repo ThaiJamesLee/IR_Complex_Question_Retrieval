@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+__author__ = 'Ching Han Chen'
 # this is used to test implementations
 # and to show how to use the implemented code
 
